@@ -13,6 +13,8 @@ class Parcel extends EventEmitter {
   // field: ndarray
 
   constructor (id) {
+    super()
+
     this.id = id
 
     this.players = []
@@ -38,10 +40,12 @@ class Parcel extends EventEmitter {
       ws.on('close', () => {
         let i = this.clients.indexOf(ws)
 
-        console.log('Client left')
-
         if (i >= 0) {
           this.clients.splice(i)
+        }
+
+        if (ws.player) {
+          this.leave(ws.player)
         }
       })
 
@@ -51,7 +55,7 @@ class Parcel extends EventEmitter {
     })
   }
 
-  onMessage (socket, msg) {
+  onMessage (ws, msg) {
     if (msg.type === 'join') {
       ws.player = new Player(msg.player)
 

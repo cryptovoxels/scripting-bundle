@@ -2,6 +2,8 @@ const EventEmitter = require('events')
 
 class Player extends EventEmitter {
   constructor (description) {
+    super()
+
     Object.assign(this, description)
   }
 

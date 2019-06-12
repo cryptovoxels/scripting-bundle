@@ -10,11 +10,12 @@ p.fetch()
       let sign = p.getFeatureById('hello-sign')
 
       sign.set({
-        text: `update #${i}`
+        text: `${p.getPlayers().length} players`,
+        fontSize: 20
       })
 
       i++
-    }, 5000)
+    }, 1000)
 
     p.listen()
   })
