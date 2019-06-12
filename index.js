@@ -93,13 +93,13 @@ class Parcel extends EventEmitter {
   broadcast (message) {
     let packet = JSON.stringify(message)
 
-    console.log(message)
+    // console.log(message)
 
     this.clients.forEach(ws => {
       try {
         ws.send(packet)
       } catch (e) {
-        // ...
+        // can be caused by disconnected clients we somehow missed
       }
     })
   }
