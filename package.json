@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "babylonjs": "4.0.3",
+    "lodash": "4.17.11",
     "ndarray": "1.0.18",
     "node-fetch": "2.2.0",
     "uuid": "3.3.2",
