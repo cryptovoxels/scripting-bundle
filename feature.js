@@ -19,7 +19,7 @@ class Feature {
 
   save () {
     this.parcel.broadcast({
-      type: 'feature-update',
+      type: 'update',
       uuid: this.uuid,
       content: this.content
     })

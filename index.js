@@ -1,12 +1,14 @@
 const fetch = require('node-fetch')
 const WebSocket = require('ws')
+const EventEmitter = require('events')
 
 const Feature = require('./feature')
 const { VoxelField } = require('./voxel-field')
+const Player = require('./player')
 
 const API = 'http://localhost:9000'
 
-class Parcel {
+class Parcel extends EventEmitter {
   // featuresList: Array<Feature>
   // field: ndarray
 
@@ -29,12 +31,59 @@ class Parcel {
     wss.on('connection', (ws) => {
       ws.on('message', (message) => {
         console.log('received: %s', message)
+
+        this.onMessage(ws, JSON.parse(message))
       })
 
-      ws.send('something')
+      ws.on('close', () => {
+        let i = this.clients.indexOf(ws)
+
+        console.log('Client left')
+
+        if (i >= 0) {
+          this.clients.splice(i)
+        }
+      })
+
+      // ws.send('something')
 
       this.clients.push(ws)
     })
+  }
+
+  onMessage (socket, msg) {
+    if (msg.type === 'join') {
+      ws.player = new Player(msg.player)
+
+      this.join(ws.player)
+    } else if (msg.type === 'leave') {
+      if (!ws.player) {
+        return
+      }
+
+      this.leave(ws.player)
+    } else if (msg.type === 'move') {
+      if (!ws.player) {
+        return
+      }
+
+      ws.player.onMove(msg)
+    }
+  }
+
+  join (player) {
+    this.players.push(player)
+    this.emit('playerenter', player)
+  }
+
+  leave (player) {
+    let i = this.players.indexOf(player)
+
+    if (i >= 0) {
+      this.players.splice(i)
+    }
+
+    this.emit('playerleave', player)
   }
 
   broadcast (message) {
@@ -43,7 +92,11 @@ class Parcel {
     console.log(message)
 
     this.clients.forEach(ws => {
-      ws.send(packet)
+      try {
+        ws.send(packet)
+      } catch (e) {
+        // ...
+      }
     })
   }
 
