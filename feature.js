@@ -13,6 +13,7 @@ class Feature {
 
   set (dict) {
     Object.assign(this.content, dict)
+
     this.save()
   }
 

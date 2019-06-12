@@ -2,7 +2,7 @@ const fetch = require('node-fetch')
 const WebSocket = require('ws')
 
 const Feature = require('./feature')
-const VoxelField = require('./voxel-field')
+const { VoxelField } = require('./voxel-field')
 
 const API = 'http://localhost:9000'
 
@@ -17,8 +17,12 @@ class Parcel {
     this.featureList = []
   }
 
-  listen () {
-    const wss = new WebSocket.Server({ port: 8080 })
+  listen (port) {
+    if (!port) {
+      port = process.env.PORT || 3800
+    }
+
+    const wss = new WebSocket.Server({ port })
 
     this.clients = []
 
@@ -36,6 +40,8 @@ class Parcel {
   broadcast (message) {
     let packet = JSON.stringify(message)
 
+    console.log(message)
+
     this.clients.forEach(ws => {
       ws.send(packet)
     })
@@ -45,7 +51,7 @@ class Parcel {
     return fetch(`${API}/grid/parcels/${this.id}`)
       .then(r => r.json())
       .then(r => {
-        console.log(r)
+        // console.log(r)
 
         if (!r.success) {
           console.error('Could not fetch parcel info')
