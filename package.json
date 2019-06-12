@@ -1,0 +1,21 @@
+{
+  "name": "cryptovoxels",
+  "version": "0.5.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test.js && standard"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ndarray": "1.0.18",
+    "node-fetch": "2.2.0",
+    "uuid": "3.3.2",
+    "ws": "6.1.0"
+  },
+  "devDependencies": {
+    "standard": "12.0.1",
+    "tape": "4.9.1"
+  }
+}

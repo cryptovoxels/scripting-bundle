@@ -1,0 +1,202 @@
+{
+  "success": true,
+  "parcel": {
+    "id": 2,
+    "features": [
+      {
+        "type": "richtext",
+        "scale": [
+          2,
+          2,
+          1
+        ],
+        "text": "# Welcome!\n\nCryptovoxels is a virtual world, where the city is owned by different people on the Ethereum blockchain.\n\nIf you have some Ether, you can buy a parcel on OpenSea and then build on it. Each different building you see in the world is build by a different person.\n\nYou will see other people walking around, press ENTER to chat with them.\n\nHave fun!",
+        "position": [
+          -3.75,
+          2.25,
+          -3.75
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "uuid": "faf05014-9a08-4aeb-89c6-02da0bb8e237"
+      },
+      {
+        "type": "image",
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "url": "https://i.imgur.com/Efany1C.jpg",
+        "position": [
+          -6.25,
+          2.25,
+          1.25
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "uuid": "8f4e097d-d560-409c-a3b5-4638f1897469",
+        "color": false
+      },
+      {
+        "type": "sign",
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "text": "Kense",
+        "position": [
+          -6.25,
+          1.5,
+          1.25
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "uuid": "7bd4c0cf-2fb3-403f-8fcc-2a4715d19190"
+      },
+      {
+        "type": "image",
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "url": "https://i.imgur.com/eqaMxTo.jpg",
+        "position": [
+          -6.25,
+          2.25,
+          3.25
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "uuid": "88c9d244-674f-40cd-99e2-537f4d1dc89d",
+        "color": true
+      },
+      {
+        "type": "sign",
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "text": "Smokey",
+        "position": [
+          -6.25,
+          1.5,
+          3.25
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "uuid": "e4c4c2a6-302c-4c5d-9f19-776b818aa7ad"
+      },
+      {
+        "type": "image",
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "url": "https://i.imgur.com/bqNOxx9.jpg",
+        "position": [
+          -6.25,
+          2.25,
+          5.25
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "uuid": "aa5d9388-7169-4f93-bd35-7ea64aabbb96",
+        "inverted": false,
+        "color": true
+      },
+      {
+        "type": "sign",
+        "scale": [
+          0.6749999999999999,
+          0.5,
+          0.5
+        ],
+        "text": "Volca Rig",
+        "position": [
+          -6.25,
+          1.5,
+          5.25
+        ],
+        "rotation": [
+          0,
+          4.71238898038469,
+          0
+        ],
+        "uuid": "33a70c24-7f24-4318-89ee-22e33e7aead3"
+      },
+      {
+        "type": "polytext",
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "text": "Hi!",
+        "position": [
+          7,
+          0.75,
+          5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "uuid": "88548223-a75f-4249-81ff-ae0dcf5542e8"
+      },
+      {
+        "type": "polytext",
+        "scale": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "text": ":D",
+        "position": [
+          1.75,
+          0.75,
+          5
+        ],
+        "rotation": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "uuid": "5851a3e3-277b-428f-97e5-4525f2ea64ff"
+      }
+    ],
+    "voxels": "eJzt221qwzAMgOF5vWiP4qP0qCOELmnwMllBjiS/j390HxWpKS+Bziu1BFxfSswy63E24tLvVzsJeBSz/fG7BTyiXyCujP2+n3F8lOz2UR+19Shx1+yzPmvrEfll7Ndit4BH9AvERb9AXPQLxBW33+/da1i/k+92efbyCdH6KdEcs5ve2c/VM6vBbM9s3H4BXK2ffoH70C9g4VVHXIV+AQv0O1+/Y95zjEC/Hf02dtHaWXO3bmZfdVna67Ywe8fs+j6+l+q6QlfuZffV2/uay+9Z4v7dlo5zyNdnt3f7ynXhgff7b5x+l7+b6nd7paOR7cMX+qVfxEW/9Auco1/prAb9whb9Smc16Be20vRbP9YB/SKnPP1u5umX8x6zo9//0C/8ytVvafYrO7/R/p2soztm5Sd8kFeufv+6/+5fs3a/Hv/D2/p0HrN5Z13Ve9pvnPOTvbPce2eXp18+f8Z80vR7in6RE/1KZzXoF7boVzqrQb+wRb/SWQ36hS36lc5q0C9s0a90VoN+YStiv7Ky++o/zm5fbe1Hmd3/jNnss/r1A5MuiM4=",
+    "owner": "0x2D891ED45C4C3EAB978513DF4B92a35Cf131d2e2",
+    "address": "72 Block Fork",
+    "colors": 174,
+    "x1": -20,
+    "y1": 0,
+    "z1": 2,
+    "x2": -2,
+    "y2": 8,
+    "z2": 17
+  }
+}
