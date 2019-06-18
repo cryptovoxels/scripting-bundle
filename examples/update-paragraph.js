@@ -4,8 +4,6 @@ const p = new Parcel(2)
 
 p.fetch()
   .then(() => {
-    let i = 1
-
     setInterval(() => {
       let sign = p.getFeatureById('hello-sign')
 
@@ -13,8 +11,6 @@ p.fetch()
         text: `${p.getPlayers().length} players`,
         fontSize: 20
       })
-
-      i++
     }, 1000)
 
     p.listen()

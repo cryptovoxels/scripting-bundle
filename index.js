@@ -6,7 +6,7 @@ const Feature = require('./feature')
 const { VoxelField } = require('./voxel-field')
 const Player = require('./player')
 
-const API = 'http://localhost:9000'
+const API = 'https://www.cryptovoxels.com'
 
 class Parcel extends EventEmitter {
   // featuresList: Array<Feature>
