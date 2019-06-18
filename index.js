@@ -49,10 +49,10 @@ class Parcel extends EventEmitter {
         }
       })
 
-      // ws.send('something')
-
       this.clients.push(ws)
     })
+
+    return port
   }
 
   onMessage (ws, msg) {

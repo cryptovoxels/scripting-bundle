@@ -32,13 +32,13 @@ class Feature {
     }
 
     this._position = new B.Vector3()
-    this.position = Proxy(this._position, handler)
+    this.position = new Proxy(this._position, handler)
 
     this._rotation = new B.Vector3()
-    this.rotation = Proxy(this._rotation, handler)
+    this.rotation = new Proxy(this._rotation, handler)
 
     this._scale = new B.Vector3()
-    this.scale = Proxy(this._scale, handler)
+    this.scale = new Proxy(this._scale, handler)
 
     this.updateVectors()
   }

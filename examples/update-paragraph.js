@@ -13,5 +13,6 @@ p.fetch()
       })
     }, 1000)
 
-    p.listen()
+    let port = p.listen()
+    console.log(`Listening for connections on port ${port}`)
   })
