@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tape test.js && standard"
+    "test": "tape tests/*.js && standard"
   },
   "author": "",
   "license": "ISC",

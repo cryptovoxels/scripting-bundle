@@ -141,5 +141,7 @@ class Parcel extends EventEmitter {
 }
 
 module.exports = {
-  Parcel
+  Parcel,
+  Feature,
+  VoxelField
 }

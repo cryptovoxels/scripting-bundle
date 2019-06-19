@@ -6,65 +6,73 @@ class Feature {
   constructor (parcel, obj) {
     this.parcel = parcel
     this.uuid = obj.uuid
-    this.content = obj
+    this._content = obj
 
-    this.mutated = _.throttle(() => {
-      let s = Object.assign({}, this.content)
+    let mutated = _.throttle(() => {
+      let s = Object.assign({}, this._content)
 
       this._position.toArray(s.position)
       this._rotation.toArray(s.rotation)
       this._scale.toArray(s.scale)
 
-      console.log(`Mutated`)
+      // console.log(`Mutated`)
 
       this.set(s)
-    }, 10)
+    }, 10, { leading: false, trailing: true })
 
     let handler = attr => {
       return {
         set (target, key, value) {
-          console.log(`Setting ${attr}.${key} as ${value}`)
+          // console.log(`Setting ${attr}.${key} as ${value}`)
           target[key] = value
-          this.mutated()
+          mutated()
           return value
         }
       }
     }
 
     this._position = new B.Vector3()
-    this.position = new Proxy(this._position, handler)
+    this.position = new Proxy(this._position, handler('position'))
 
     this._rotation = new B.Vector3()
-    this.rotation = new Proxy(this._rotation, handler)
+    this.rotation = new Proxy(this._rotation, handler('rotation'))
 
     this._scale = new B.Vector3()
-    this.scale = new Proxy(this._scale, handler)
+    this.scale = new Proxy(this._scale, handler('scale'))
 
     this.updateVectors()
   }
 
   get id () {
-    return this.content.id
+    return this._content.id
+  }
+
+  get type () {
+    return this._content.type
+  }
+
+  get description () {
+    return this._content
   }
 
   set (dict) {
-    Object.assign(this.content, dict)
+    Object.assign(this._content, dict)
 
     this.updateVectors()
     this.save()
   }
 
   updateVectors () {
-    this._position.set(this.content.position[0], this.content.position[1], this.content.position[2])
-    this._rotation.set(this.content.position[0], this.content.position[1], this.content.position[2])
-    this._scale.set(this.content.scale[0], this.content.scale[1], this.content.scale[2])
+    this._position.set(this._content.position[0], this._content.position[1], this._content.position[2])
+    this._rotation.set(this._content.rotation[0], this._content.rotation[1], this._content.rotation[2])
+    this._scale.set(this._content.scale[0], this._content.scale[1], this._content.scale[2])
   }
 
   save () {
     this.parcel.broadcast({
       type: 'update',
       uuid: this.uuid,
-      content: this.content
+      content: this._content
     })
   }
 }

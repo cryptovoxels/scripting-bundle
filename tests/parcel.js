@@ -1,5 +1,5 @@
 const test = require('tape')
-const Parcel = require('./index')
+const { Parcel } = require('../index')
 const json = require('./parcel.json').parcel
 
 test('fetch', async (t) => {
