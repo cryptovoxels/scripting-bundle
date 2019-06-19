@@ -32,8 +32,6 @@ class Parcel extends EventEmitter {
 
     wss.on('connection', (ws) => {
       ws.on('message', (message) => {
-        console.log('received: %s', message)
-
         this.onMessage(ws, JSON.parse(message))
       })
 
