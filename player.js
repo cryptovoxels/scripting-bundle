@@ -19,8 +19,8 @@ class Player extends EventEmitter {
     return this.avatar.uuid
   }
 
-  onMove () {
-    this.emit('')
+  onMove (msg) {
+    this.emit('move', msg)
   }
 }
 
