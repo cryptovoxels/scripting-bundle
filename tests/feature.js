@@ -76,3 +76,16 @@ test('vec3 proxies', (t) => {
   f.rotation.addInPlace(new B.Vector3(10, 10, 10))
   t.plan(1)
 })
+
+test('vec3 copyFrom', (t) => {
+  let p = {
+    broadcast: (mesg) => {
+      t.equal(mesg.type, 'update')
+    }
+  }
+
+  let z = new B.Vector3(100, 100, 100)
+  let f = new Feature(p, desc)
+  f.position.copyFrom(z)
+  t.plan(1)
+})
