@@ -85,4 +85,33 @@ class Feature extends EventEmitter {
   }
 }
 
+class Audio extends Feature {
+  play () {
+    this.parcel.broadcast({
+      type: 'play',
+      uuid: this.uuid
+    })
+  }
+}
+
+class Video extends Feature {
+  play () {
+    this.parcel.broadcast({
+      type: 'play',
+      uuid: this.uuid
+    })
+  }
+}
+
+Feature.create = (parcel, obj) => {
+  if (obj.type === 'audio') {
+    return new Audio(parcel, obj)
+  } else if (obj.type === 'video') {
+    return new Video(parcel, obj)
+  } else {
+    return new Feature(parcel, obj)
+  }
+}
+
 module.exports = Feature
+

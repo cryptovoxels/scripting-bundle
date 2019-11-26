@@ -150,7 +150,7 @@ class Parcel extends EventEmitter {
     Object.assign(this, parcel)
 
     // Create features array
-    this.featuresList = Array.from(parcel.features).map(f => new Feature(this, f))
+    this.featuresList = Array.from(parcel.features).map(f => Feature.create(this, f))
     this.voxels = new VoxelField(this)
   }
 
