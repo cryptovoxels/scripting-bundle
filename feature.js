@@ -1,5 +1,6 @@
 // const uuid = require('uuid/v4')
 import { Vector3 } from './vendor/babylonjs/Maths/math'
+import { Animation } from './vendor/babylonjs/Animations/animation'
 
 const throttle = require('lodash.throttle')
 const EventEmitter = require('events')
@@ -83,6 +84,15 @@ class Feature extends EventEmitter {
       content: this._content
     })
   }
+
+  createAnimation (key) {
+    return new Animation(null, key, 30, Animation.ANIMATIONTYPE_VECTOR3)
+  }
+
+  startAnimations (animations) {
+    let ag = animations.map(a => a.serialize())
+    console.log(ag)
+  }
 }
 
 class Audio extends Feature {
@@ -114,4 +124,3 @@ Feature.create = (parcel, obj) => {
 }
 
 module.exports = Feature
-

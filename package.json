@@ -5,13 +5,14 @@
   "main": "index.js",
   "scripts": {
     "bundle": "browserify index.js  -t babelify -p tinyify -o bundle.js && cp bundle.js ../cryptovoxels/dist/scripting-host.js",
-    "test": "tape tests/*.js && standard"
+    "test": "babel-tape-runner tests/*.js && standard"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@babel/preset-env": "^7.6.2",
     "@babylonjs/core": "^4.0.3",
+    "babel-tape-runner": "^3.0.0",
     "babylonjs": "4.0.3",
     "lodash": "4.17.11",
     "lodash.throttle": "^4.1.1",

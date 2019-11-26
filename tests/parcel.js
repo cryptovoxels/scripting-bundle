@@ -2,6 +2,7 @@ const test = require('tape')
 const { Parcel } = require('../index')
 const json = require('./parcel.json').parcel
 
+/*
 test('fetch', async (t) => {
   let p = new Parcel(2)
 
@@ -12,6 +13,7 @@ test('fetch', async (t) => {
 
   await p.fetch()
 })
+*/
 
 test('parse', (t) => {
   let p = new Parcel(2)

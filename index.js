@@ -1,3 +1,6 @@
+import { Vector3, Quaternion, Vector2, Color3, Matrix } from './vendor/babylonjs/Maths/math'
+import { Animation } from './vendor/babylonjs/Animations/animation'
+
 // const fetch = require('node-fetch')
 // const WebSocket = require('ws')
 const EventEmitter = require('events')
@@ -6,7 +9,7 @@ const Feature = require('./feature')
 const { VoxelField } = require('./voxel-field')
 const Player = require('./player')
 
-const API = 'https://www.cryptovoxels.com'
+// const API = 'https://www.cryptovoxels.com'
 
 class Parcel extends EventEmitter {
   // featuresList: Array<Feature>
@@ -60,7 +63,7 @@ class Parcel extends EventEmitter {
 
       this.join(ws.player)
       return
-    } 
+    }
 
     if (!ws.player) {
       return
@@ -137,7 +140,7 @@ class Parcel extends EventEmitter {
     // console.log('debug')
 
     let ul = document.querySelector('#debug')
-    ul.innerHTML = 
+    ul.innerHTML =
       this.featuresList.map(f => `
         <li>
           ${f.type}${f.id ? ('#' + f.id) : ''}<br />
@@ -174,7 +177,15 @@ class Parcel extends EventEmitter {
 module.exports = {
   Parcel,
   Feature,
-  VoxelField
+  VoxelField,
+  Animation,
+  Vector3,
+  Quaternion,
+  Vector2,
+  Color3,
+  Matrix
 }
 
-Object.assign(self, module.exports)
+if (typeof self !== 'undefined') {
+  Object.assign(self, module.exports) // eslint-disable-line
+}
