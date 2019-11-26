@@ -90,7 +90,16 @@ class Feature extends EventEmitter {
   }
 
   startAnimations (animationArray) {
-    let animations = animationArray.map(a => a.serialize())
+    let animations = animationArray.map(a => {
+      let animation = a.clone()
+
+      animation._keys.unshift({
+        frame: 0,
+        value: this[animation.targetProperty].clone()
+      })
+
+      return animation.serialize()
+    })
 
     this.parcel.broadcast({
       type: 'animate',
