@@ -89,9 +89,14 @@ class Feature extends EventEmitter {
     return new Animation(null, key, 30, Animation.ANIMATIONTYPE_VECTOR3)
   }
 
-  startAnimations (animations) {
-    let ag = animations.map(a => a.serialize())
-    console.log(ag)
+  startAnimations (animationArray) {
+    let animations = animationArray.map(a => a.serialize())
+
+    this.parcel.broadcast({
+      type: 'animate',
+      uuid: this.uuid,
+      animations
+    })
   }
 }
 

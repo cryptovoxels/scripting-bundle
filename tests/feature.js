@@ -111,3 +111,37 @@ test('play', t => {
   let f = Feature.create(p, Object.assign({}, desc, { type: 'audio' }))
   f.play()
 })
+
+test('animation', t => {
+  t.plan(1)
+
+  let p = {
+    broadcast: (mesg) => {
+      t.equal(mesg.type, 'animate')
+    }
+  }
+
+  let f = Feature.create(p, desc)
+
+  let a1 = f.createAnimation('rotation')
+
+  // Keyframe 0 is automatically created from current location
+
+  a1.setKeys([
+    {
+      frame: 100,
+      value: f.rotation.add(new Vector3(Math.PI, 0, 0))
+    }
+  ])
+
+  let a2 = f.createAnimation('position')
+  a2.setKeys([
+    {
+      frame: 100,
+      value: f.position.add(new Vector3(5, 1, 1))
+    }
+  ])
+
+  f.startAnimations([a1, a2])
+  t.end()
+})
