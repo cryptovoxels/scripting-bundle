@@ -1,14 +1,19 @@
 // const uuid = require('uuid/v4')
-const B = require('babylonjs')
-const _ = require('lodash')
+import { Vector3 } from './vendor/babylonjs/Maths/math'
+import { Animation } from './vendor/babylonjs/Animations/animation'
 
-class Feature {
+const throttle = require('lodash.throttle')
+const EventEmitter = require('events')
+
+class Feature extends EventEmitter {
   constructor (parcel, obj) {
+    super()
+
     this.parcel = parcel
     this.uuid = obj.uuid
     this._content = obj
 
-    let mutated = _.throttle(() => {
+    let mutated = throttle(() => {
       let s = Object.assign({}, this._content)
 
       this._position.toArray(s.position)
@@ -31,13 +36,13 @@ class Feature {
       }
     }
 
-    this._position = new B.Vector3()
+    this._position = new Vector3()
     this.position = new Proxy(this._position, handler('position'))
 
-    this._rotation = new B.Vector3()
+    this._rotation = new Vector3()
     this.rotation = new Proxy(this._rotation, handler('rotation'))
 
-    this._scale = new B.Vector3()
+    this._scale = new Vector3()
     this.scale = new Proxy(this._scale, handler('scale'))
 
     this.updateVectors()
@@ -53,6 +58,10 @@ class Feature {
 
   get description () {
     return this._content
+  }
+
+  getSummary () {
+    return `position: ${this.position.toArray()}`
   }
 
   set (dict) {
@@ -74,6 +83,57 @@ class Feature {
       uuid: this.uuid,
       content: this._content
     })
+  }
+
+  createAnimation (key) {
+    return new Animation(null, key, 30, Animation.ANIMATIONTYPE_VECTOR3)
+  }
+
+  startAnimations (animationArray) {
+    let animations = animationArray.map(a => {
+      let animation = a.clone()
+
+      animation._keys.unshift({
+        frame: 0,
+        value: this[animation.targetProperty].clone()
+      })
+
+      return animation.serialize()
+    })
+
+    this.parcel.broadcast({
+      type: 'animate',
+      uuid: this.uuid,
+      animations
+    })
+  }
+}
+
+class Audio extends Feature {
+  play () {
+    this.parcel.broadcast({
+      type: 'play',
+      uuid: this.uuid
+    })
+  }
+}
+
+class Video extends Feature {
+  play () {
+    this.parcel.broadcast({
+      type: 'play',
+      uuid: this.uuid
+    })
+  }
+}
+
+Feature.create = (parcel, obj) => {
+  if (obj.type === 'audio') {
+    return new Audio(parcel, obj)
+  } else if (obj.type === 'video') {
+    return new Video(parcel, obj)
+  } else {
+    return new Feature(parcel, obj)
   }
 }
 
