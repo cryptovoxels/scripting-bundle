@@ -19,10 +19,12 @@ class VoxelField {
     this.resolution = [width, height, depth]
     this.field = ndarray(new Uint16Array(width * height * depth), this.resolution)
 
-    // Inflate voxel field
-    const buffer = Buffer.from(this.parcel.voxels, 'base64')
-    const inflated = zlib.inflateSync(buffer)
-    inflated.copy(Buffer.from(this.field.data.buffer))
+    if (this.parcel.voxels) {
+      // Inflate voxel field
+      const buffer = Buffer.from(this.parcel.voxels, 'base64')
+      const inflated = zlib.inflateSync(buffer)
+      inflated.copy(Buffer.from(this.field.data.buffer))
+    }
   }
 
   get width () {

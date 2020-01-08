@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bundle": "browserify index.js  -t babelify -p tinyify -o bundle.js && cp bundle.js ../cryptovoxels/dist/scripting-host.js",
+    "bundle": "browserify index.js -t babelify -o bundle.js && cp bundle.js ../cryptovoxels/dist/scripting-host.js",
     "test": "babel-tape-runner tests/*.js && standard"
   },
   "author": "",
