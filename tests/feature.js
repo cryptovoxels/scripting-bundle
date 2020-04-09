@@ -145,3 +145,16 @@ test('animation', t => {
   f.startAnimations([a1, a2])
   t.end()
 })
+
+test('play', t => {
+  t.plan(1)
+
+  let p = {
+    broadcast: (mesg) => {
+      t.equal(mesg.type, 'play')
+    }
+  }
+
+  let f = Feature.create(p, Object.assign({}, desc, { type: 'audio', url: 'http://example.com/song.mp3' }))
+  t.equal('http://example.com/song.mp3', f.get('url'))
+})

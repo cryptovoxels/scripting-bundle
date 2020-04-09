@@ -4,6 +4,7 @@
     "id": 2,
     "features": [
       {
+        "id": "boop",
         "type": "richtext",
         "scale": [
           2,

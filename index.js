@@ -169,6 +169,10 @@ class Parcel extends EventEmitter {
     return this.featuresList
   }
 
+  getFeaturesByType (type) {
+    return this.featuresList.filter(f => f.type === type)
+  }
+
   getPlayers () {
     return this.players
   }

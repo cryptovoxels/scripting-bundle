@@ -60,6 +60,10 @@ class Feature extends EventEmitter {
     return this._content
   }
 
+  get (key) {
+    return this._content[key]
+  }
+
   getSummary () {
     return `position: ${this.position.toArray()}`
   }

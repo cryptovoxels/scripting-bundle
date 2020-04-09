@@ -30,5 +30,10 @@ test('parse', (t) => {
   t.ok(p.owner)
   t.equal(p.colors, 174)
 
+  t.ok(p.getFeatureByUuid('faf05014-9a08-4aeb-89c6-02da0bb8e237'))
+  t.ok(p.getFeatureById('boop'))
+  t.equal(1, p.getFeaturesByType('richtext').length)
+  t.equal(9, p.getFeatures().length)
+
   t.end()
 })
