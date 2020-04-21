@@ -140,19 +140,12 @@ class VidScreen extends Feature {
   }
 
   start () {
-    console.log('start!')
-    
     this.screen = new Uint8Array(64 * 64 * 3)
     this.screenWidth = 64
     this.screenHeight = 64    
 
     setInterval(() => {
-      let z
-      
-      for (z = 0 ; z < 100; z++) {
-        let i = Math.floor(Math.random() * 64 * 64 * 3)
-        this.screen[i] = Math.random() * 255
-      }
+      this.emit('frame')
 
       postMessage({
         type: 'screen',
