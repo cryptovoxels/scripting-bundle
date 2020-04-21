@@ -1,15 +1,10 @@
 import { Vector3, Quaternion, Vector2, Color3, Matrix } from './vendor/babylonjs/Maths/math'
 import { Animation } from './vendor/babylonjs/Animations/animation'
 
-// const fetch = require('node-fetch')
-// const WebSocket = require('ws')
 const EventEmitter = require('events')
-
 const Feature = require('./feature')
 const { VoxelField } = require('./voxel-field')
 const Player = require('./player')
-
-// const API = 'https://www.cryptovoxels.com'
 
 class Parcel extends EventEmitter {
   // featuresList: Array<Feature>
@@ -26,35 +21,6 @@ class Parcel extends EventEmitter {
   }
 
   listen (port) {
-    // if (!port) {
-    //   port = process.env.PORT || 3800
-    // }
-
-    // const wss = new WebSocket.Server({ port })
-
-    // this.clients = []
-
-    // wss.on('connection', (ws) => {
-    //   ws.on('message', (message) => {
-    //     this.onMessage(ws, JSON.parse(message))
-    //   })
-
-    //   ws.on('close', () => {
-    //     let i = this.clients.indexOf(ws)
-
-    //     if (i >= 0) {
-    //       this.clients.splice(i)
-    //     }
-
-    //     if (ws.player) {
-    //       this.leave(ws.player)
-    //     }
-    //   })
-
-    //   this.clients.push(ws)
-    // })
-
-    // return port
   }
 
   onMessage (ws, msg) {
@@ -77,6 +43,7 @@ class Parcel extends EventEmitter {
       let f = this.getFeatureByUuid(msg.uuid)
 
       if (!f) {
+        console.log('cant find feature ' + msg.uuid)
         return
       }
 
@@ -114,18 +81,6 @@ class Parcel extends EventEmitter {
   }
 
   fetch () {
-    // return fetch(`${API}/grid/parcels/${this.id}`)
-    //   .then(r => r.json())
-    //   .then(r => {
-    //     // console.log(r)
-
-    //     if (!r.success) {
-    //       console.error('Could not fetch parcel info')
-    //       return
-    //     }
-
-    //     this.parse(r.parcel)
-    //   })
   }
 
   debug () {

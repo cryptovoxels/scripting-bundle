@@ -131,11 +131,52 @@ class Video extends Feature {
   }
 }
 
+class VidScreen extends Feature {
+  constructor (parcel, obj) {
+    super(parcel, obj)
+
+    console.log('listening for click!')
+    this.on('click', () => this.start())
+  }
+
+  start () {
+    console.log('start!')
+    
+    this.screen = new Uint8Array(64 * 64 * 3)
+    this.screenWidth = 64
+    this.screenHeight = 64    
+
+    setInterval(() => {
+      let z
+      
+      for (z = 0 ; z < 100; z++) {
+        let i = Math.floor(Math.random() * 64 * 64 * 3)
+        this.screen[i] = Math.random() * 255
+      }
+
+      postMessage({
+        type: 'screen',
+        uuid: this.uuid,
+        screen: this.screen
+      })
+    }, 1000 / 30)
+  }
+
+  play () {
+    this.parcel.broadcast({
+      type: 'play',
+      uuid: this.uuid
+    })
+  }
+}
+
 Feature.create = (parcel, obj) => {
   if (obj.type === 'audio') {
     return new Audio(parcel, obj)
   } else if (obj.type === 'video') {
     return new Video(parcel, obj)
+  } else if (obj.type === 'vid-screen') {
+    return new VidScreen(parcel, obj)
   } else {
     return new Feature(parcel, obj)
   }
