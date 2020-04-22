@@ -48,6 +48,11 @@ class Parcel extends EventEmitter {
       }
 
       f.emit('click', Object.assign({}, msg.event, { player: ws.player }))
+    } else if (msg.type === 'keys') {
+      let f = this.getFeatureByUuid(msg.uuid)
+      if (!f) return
+
+      f.emit('keys', msg.event)
     }
   }
 
