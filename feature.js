@@ -131,12 +131,13 @@ class Video extends Feature {
   }
 }
 
+
 class VidScreen extends Feature {
   constructor (parcel, obj) {
     super(parcel, obj)
 
-    console.log('listening for click!')
-    this.on('click', () => this.start())
+    this.on('start', () => this.start())
+    this.on('stop', () => this.stop())
   }
 
   start () {
@@ -144,7 +145,7 @@ class VidScreen extends Feature {
     this.screenWidth = 64
     this.screenHeight = 64    
 
-    setInterval(() => {
+    this._interval = setInterval(() => {
       this.emit('frame')
 
       postMessage({
@@ -155,11 +156,8 @@ class VidScreen extends Feature {
     }, 1000 / 30)
   }
 
-  play () {
-    this.parcel.broadcast({
-      type: 'play',
-      uuid: this.uuid
-    })
+  stop () {
+    clearInterval(this._interval)
   }
 }
 
