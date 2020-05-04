@@ -122,6 +122,16 @@ class Audio extends Feature {
   }
 }
 
+class TextInput extends Feature {
+  constructor (parcel, obj) {
+    super(parcel, obj)
+
+    this.on('changed', (e) => {
+      this.text = e.text
+    })
+  }
+}
+
 class Video extends Feature {
   play () {
     this.parcel.broadcast({
@@ -168,6 +178,8 @@ Feature.create = (parcel, obj) => {
     return new Video(parcel, obj)
   } else if (obj.type === 'vid-screen') {
     return new VidScreen(parcel, obj)
+  } else if (obj.type === 'text-input') {
+    return new TextInput(parcel, obj)
   } else {
     return new Feature(parcel, obj)
   }

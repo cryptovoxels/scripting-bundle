@@ -1,5 +1,5 @@
-const ndarray = require('ndarray')
-const zlib = require('zlib')
+// const ndarray = require('ndarray')
+// const zlib = require('zlib')
 
 const Blocks = (index, transparent, color) => {
   return index + (transparent ? 0 : 1 << 15) + (color << 6)
@@ -17,6 +17,9 @@ class VoxelField {
     let depth = (parcel.z2 - parcel.z1) / voxelSize
 
     this.resolution = [width, height, depth]
+
+    /*
+
     this.field = ndarray(new Uint16Array(width * height * depth), this.resolution)
 
     if (this.parcel.voxels) {
@@ -25,6 +28,8 @@ class VoxelField {
       const inflated = zlib.inflateSync(buffer)
       inflated.copy(Buffer.from(this.field.data.buffer))
     }
+
+    */
   }
 
   get width () {

@@ -60,6 +60,10 @@ class Parcel extends EventEmitter {
       let f = this.getFeatureByUuid(msg.uuid)
       if (!f) return
       f.emit('stop')
+    } else if (msg.type === 'changed') {
+      let f = this.getFeatureByUuid(msg.uuid)
+      if (!f) return
+      f.emit('changed', msg.event)
     }
   }
 
