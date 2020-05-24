@@ -1,6 +1,7 @@
 import { Vector3, Quaternion, Vector2, Color3, Matrix } from './vendor/babylonjs/Maths/math'
 import { Animation } from './vendor/babylonjs/Animations/animation'
 
+const uuid = require('uuid/v4')
 const EventEmitter = require('events')
 const Feature = require('./feature')
 const { VoxelField } = require('./voxel-field')
@@ -40,7 +41,7 @@ class Parcel extends EventEmitter {
     } else if (msg.type === 'move') {
       ws.player.onMove(msg)
     } else if (msg.type === 'click') {
-      let f = this.getFeatureByUuid(msg.uuid)
+      const f = this.getFeatureByUuid(msg.uuid)
 
       if (!f) {
         console.log('cant find feature ' + msg.uuid)
@@ -49,19 +50,19 @@ class Parcel extends EventEmitter {
 
       f.emit('click', Object.assign({}, msg.event, { player: ws.player }))
     } else if (msg.type === 'keys') {
-      let f = this.getFeatureByUuid(msg.uuid)
+      const f = this.getFeatureByUuid(msg.uuid)
       if (!f) return
       f.emit('keys', msg.event)
     } else if (msg.type === 'start') {
-      let f = this.getFeatureByUuid(msg.uuid)
+      const f = this.getFeatureByUuid(msg.uuid)
       if (!f) return
       f.emit('start')
     } else if (msg.type === 'stop') {
-      let f = this.getFeatureByUuid(msg.uuid)
+      const f = this.getFeatureByUuid(msg.uuid)
       if (!f) return
       f.emit('stop')
     } else if (msg.type === 'changed') {
-      let f = this.getFeatureByUuid(msg.uuid)
+      const f = this.getFeatureByUuid(msg.uuid)
       if (!f) return
       f.emit('changed', msg.event)
     }
@@ -73,7 +74,7 @@ class Parcel extends EventEmitter {
   }
 
   leave (player) {
-    let i = this.players.indexOf(player)
+    const i = this.players.indexOf(player)
 
     if (i >= 0) {
       this.players.splice(i)
@@ -83,7 +84,7 @@ class Parcel extends EventEmitter {
   }
 
   broadcast (message) {
-    let packet = JSON.stringify(message)
+    const packet = JSON.stringify(message)
 
     // console.log(message)
 
@@ -110,7 +111,7 @@ class Parcel extends EventEmitter {
 
     // console.log('debug')
 
-    let ul = document.querySelector('#debug')
+    const ul = document.querySelector('#debug')
     ul.innerHTML =
       this.featuresList.map(f => `
         <li>
@@ -146,6 +147,39 @@ class Parcel extends EventEmitter {
 
   getPlayers () {
     return this.players
+  }
+
+  createFeature (type) {
+    const feature = Feature.create(this, {
+      position: Vector3.Zero(),
+      rotation: Vector3.Zero(),
+      scale: new Vector3(1, 1, 1),
+      type,
+      uuid: uuid()
+    })
+
+    this.featuresList.push(feature)
+
+    this.broadcast({
+      type: 'create',
+      uuid: feature.uuid,
+      content: feature._content
+    })
+
+    return feature
+  }
+
+  removeFeature (f) {
+    this.broadcast({
+      type: 'remove',
+      uuid: f.uuid
+    })
+
+    const i = this.featuresList.indexOf(f)
+
+    if (i > -1) {
+      this.featuresList.splice(i)
+    }
   }
 }
 

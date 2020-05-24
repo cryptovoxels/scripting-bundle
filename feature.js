@@ -1,3 +1,5 @@
+/* global postMessage */
+
 // const uuid = require('uuid/v4')
 import { Vector3 } from './vendor/babylonjs/Maths/math'
 import { Animation } from './vendor/babylonjs/Animations/animation'
@@ -13,8 +15,8 @@ class Feature extends EventEmitter {
     this.uuid = obj.uuid
     this._content = obj
 
-    let mutated = throttle(() => {
-      let s = Object.assign({}, this._content)
+    const mutated = throttle(() => {
+      const s = Object.assign({}, this._content)
 
       this._position.toArray(s.position)
       this._rotation.toArray(s.rotation)
@@ -25,7 +27,7 @@ class Feature extends EventEmitter {
       this.set(s)
     }, 10, { leading: false, trailing: true })
 
-    let handler = attr => {
+    const handler = attr => {
       return {
         set (target, key, value) {
           // console.log(`Setting ${attr}.${key} as ${value}`)
@@ -94,8 +96,8 @@ class Feature extends EventEmitter {
   }
 
   startAnimations (animationArray) {
-    let animations = animationArray.map(a => {
-      let animation = a.clone()
+    const animations = animationArray.map(a => {
+      const animation = a.clone()
 
       animation._keys.unshift({
         frame: 0,
@@ -110,6 +112,10 @@ class Feature extends EventEmitter {
       uuid: this.uuid,
       animations
     })
+  }
+
+  remove () {
+    this.parcel.removeFeature(this)
   }
 }
 
@@ -141,7 +147,6 @@ class Video extends Feature {
   }
 }
 
-
 class VidScreen extends Feature {
   constructor (parcel, obj) {
     super(parcel, obj)
@@ -153,7 +158,7 @@ class VidScreen extends Feature {
   start () {
     this.screen = new Uint8Array(64 * 64 * 3)
     this.screenWidth = 64
-    this.screenHeight = 64    
+    this.screenHeight = 64
 
     this._interval = setInterval(() => {
       this.emit('frame')

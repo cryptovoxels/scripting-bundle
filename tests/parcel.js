@@ -16,8 +16,7 @@ test('fetch', async (t) => {
 */
 
 test('parse', (t) => {
-  let p = new Parcel(2)
-
+  const p = new Parcel(2)
   p.parse(json)
 
   t.equal(p.x1, -20)
@@ -34,6 +33,28 @@ test('parse', (t) => {
   t.ok(p.getFeatureById('boop'))
   t.equal(1, p.getFeaturesByType('richtext').length)
   t.equal(9, p.getFeatures().length)
+
+  t.end()
+})
+
+test('onMessage', t => {
+  // todo
+
+  t.end()
+})
+
+test('createFeature / removeFeature', t => {
+  const p = new Parcel(2)
+  p.parse(json)
+
+  t.equal(9, p.getFeatures().length)
+
+  const f = p.createFeature('image')
+  t.equal(10, p.getFeatures().length)
+  f.remove()
+
+  t.equal(9, p.getFeatures().length)
+  t.equal(-1, p.getFeatures().indexOf(f))
 
   t.end()
 })

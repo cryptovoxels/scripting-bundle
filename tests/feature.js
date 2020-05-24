@@ -3,7 +3,7 @@ const uuid = require('uuid/v4')
 const test = require('tape')
 const { Feature } = require('../index')
 
-let desc = {
+const desc = {
   uuid: uuid(),
   position: [1, 2, 3],
   rotation: [0, 0, 0],
@@ -14,9 +14,9 @@ let desc = {
 }
 
 test('ctor', async (t) => {
-  let p = {}
+  const p = {}
 
-  let f = new Feature(p, desc)
+  const f = new Feature(p, desc)
   t.equal(f.id, 'dorp')
   t.equal(f.uuid, desc.uuid)
   t.equal(f.type, 'sign')
@@ -24,20 +24,20 @@ test('ctor', async (t) => {
 })
 
 test('set', (t) => {
-  let p = {
+  const p = {
     broadcast: (mesg) => {
       t.equal(mesg.type, 'update')
       t.end()
     }
   }
 
-  let f = new Feature(p, desc)
+  const f = new Feature(p, desc)
   f.set({ text: 'hi2u' })
   t.equal(f.description.text, 'hi2u')
 })
 
 test('position', t => {
-  let f = new Feature({}, desc)
+  const f = new Feature({}, desc)
   t.ok(f.position instanceof Vector3)
   t.equal(f.position.x, 1)
   t.equal(f.position.y, 2)
@@ -46,7 +46,7 @@ test('position', t => {
 })
 
 test('rotation', t => {
-  let f = new Feature({}, desc)
+  const f = new Feature({}, desc)
   t.ok(f.rotation instanceof Vector3)
   t.equal(f.rotation.x, 0)
   t.equal(f.rotation.y, 0)
@@ -55,7 +55,7 @@ test('rotation', t => {
 })
 
 test('scale', t => {
-  let f = new Feature({}, desc)
+  const f = new Feature({}, desc)
   t.ok(f.scale instanceof Vector3)
   t.equal(f.scale.x, 1)
   t.equal(f.scale.y, 1)
@@ -64,13 +64,13 @@ test('scale', t => {
 })
 
 test('vec3 proxies', (t) => {
-  let p = {
+  const p = {
     broadcast: (mesg) => {
       t.equal(mesg.type, 'update')
     }
   }
 
-  let f = new Feature(p, desc)
+  const f = new Feature(p, desc)
   f.position.x += 10
   f.scale.set(4, 5, 6)
   f.rotation.addInPlace(new Vector3(10, 10, 10))
@@ -78,14 +78,14 @@ test('vec3 proxies', (t) => {
 })
 
 test('vec3 copyFrom', (t) => {
-  let p = {
+  const p = {
     broadcast: (mesg) => {
       t.equal(mesg.type, 'update')
     }
   }
 
-  let z = new Vector3(100, 100, 100)
-  let f = new Feature(p, desc)
+  const z = new Vector3(100, 100, 100)
+  const f = new Feature(p, desc)
   f.position.copyFrom(z)
   t.plan(1)
 })
@@ -102,28 +102,28 @@ test('create', t => {
 test('play', t => {
   t.plan(1)
 
-  let p = {
+  const p = {
     broadcast: (mesg) => {
       t.equal(mesg.type, 'play')
     }
   }
 
-  let f = Feature.create(p, Object.assign({}, desc, { type: 'audio' }))
+  const f = Feature.create(p, Object.assign({}, desc, { type: 'audio' }))
   f.play()
 })
 
 test('animation', t => {
   t.plan(1)
 
-  let p = {
+  const p = {
     broadcast: (mesg) => {
       t.equal(mesg.type, 'animate')
     }
   }
 
-  let f = Feature.create(p, desc)
+  const f = Feature.create(p, desc)
 
-  let a1 = f.createAnimation('rotation')
+  const a1 = f.createAnimation('rotation')
 
   // Keyframe 0 is automatically created from current location
 
@@ -134,7 +134,7 @@ test('animation', t => {
     }
   ])
 
-  let a2 = f.createAnimation('position')
+  const a2 = f.createAnimation('position')
   a2.setKeys([
     {
       frame: 100,
@@ -149,12 +149,12 @@ test('animation', t => {
 test('play', t => {
   t.plan(1)
 
-  let p = {
+  const p = {
     broadcast: (mesg) => {
       t.equal(mesg.type, 'play')
     }
   }
 
-  let f = Feature.create(p, Object.assign({}, desc, { type: 'audio', url: 'http://example.com/song.mp3' }))
+  const f = Feature.create(p, Object.assign({}, desc, { type: 'audio', url: 'http://example.com/song.mp3' }))
   t.equal('http://example.com/song.mp3', f.get('url'))
 })

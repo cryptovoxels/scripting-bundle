@@ -11,10 +11,10 @@ class VoxelField {
   constructor (parcel) {
     this.parcel = parcel
 
-    let voxelSize = 0.5
-    let width = (parcel.x2 - parcel.x1) / voxelSize
-    let height = (parcel.y2 - parcel.y1) / voxelSize
-    let depth = (parcel.z2 - parcel.z1) / voxelSize
+    const voxelSize = 0.5
+    const width = (parcel.x2 - parcel.x1) / voxelSize
+    const height = (parcel.y2 - parcel.y1) / voxelSize
+    const depth = (parcel.z2 - parcel.z1) / voxelSize
 
     this.resolution = [width, height, depth]
 
@@ -45,18 +45,22 @@ class VoxelField {
   }
 
   serialize () {
+    console.log('Not implemented')
+    /*
+
     const buffer = Buffer.from(this.field.data.buffer)
     const deflated = zlib.deflateSync(buffer)
 
-    let voxels = deflated.toString('base64')
-    let features = this.featuresList.map(f => f.serialize)
+    const voxels = deflated.toString('base64')
+    const features = this.featuresList.map(f => f.serialize)
 
-    let content = {
+    const content = {
       features,
       voxels
     }
 
     return content
+    */
   }
 }
 

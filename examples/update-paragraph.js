@@ -5,7 +5,7 @@ const p = new Parcel(2)
 p.fetch()
   .then(() => {
     setInterval(() => {
-      let sign = p.getFeatureById('hello-sign')
+      const sign = p.getFeatureById('hello-sign')
 
       sign.set({
         text: `${p.getPlayers().length} players`,
@@ -13,6 +13,6 @@ p.fetch()
       })
     }, 1000)
 
-    let port = p.listen()
+    const port = p.listen()
     console.log(`Listening for connections on port ${port}`)
   })
