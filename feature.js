@@ -83,6 +83,17 @@ class Feature extends EventEmitter {
     this._scale.set(this._content.scale[0], this._content.scale[1], this._content.scale[2])
   }
 
+  clone () {
+    let d = JSON.parse(JSON.stringify(this.description))
+    delete d.id
+    delete d.uuid
+
+    let c = this.parcel.createFeature(this.type)
+    c.set(d)
+
+    return c
+  }
+
   save () {
     this.parcel.broadcast({
       type: 'update',

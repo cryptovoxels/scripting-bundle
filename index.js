@@ -25,7 +25,7 @@ class Parcel extends EventEmitter {
   }
 
   onMessage (ws, msg) {
-    if (msg.type === 'join') {
+    if (msg.type === 'playerenter') {
       ws.player = new Player(msg.player)
 
       this.join(ws.player)
@@ -36,7 +36,7 @@ class Parcel extends EventEmitter {
       return
     }
 
-    if (msg.type === 'leave') {
+    if (msg.type === 'playerleave') {
       this.leave(ws.player)
     } else if (msg.type === 'move') {
       ws.player.onMove(msg)
@@ -48,7 +48,14 @@ class Parcel extends EventEmitter {
         return
       }
 
-      f.emit('click', Object.assign({}, msg.event, { player: ws.player }))
+      let e = Object.assign({}, msg.event, { player: ws.player })
+
+      if (e.point) {
+        e.point = Vector3.FromArray(e.point)
+        e.normal = Vector3.FromArray(e.normal)
+      }
+
+      f.emit('click', e)
     } else if (msg.type === 'keys') {
       const f = this.getFeatureByUuid(msg.uuid)
       if (!f) return
