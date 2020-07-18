@@ -1,5 +1,4 @@
 import { Vector3, Quaternion, Vector2, Color3, Matrix } from './vendor/babylonjs/Maths/math'
-import { Animation } from './vendor/babylonjs/Animations/animation'
 
 const uuid = require('uuid/v4')
 const EventEmitter = require('events')
@@ -156,14 +155,14 @@ class Parcel extends EventEmitter {
     return this.players
   }
 
-  createFeature (type) {
-    const feature = Feature.create(this, {
+  createFeature (type, description) {
+    const feature = Feature.create(this, Object.assign({
       position: Vector3.Zero(),
       rotation: Vector3.Zero(),
       scale: new Vector3(1, 1, 1),
       type,
       uuid: uuid()
-    })
+    }, description || {}))
 
     this.featuresList.push(feature)
 
@@ -194,7 +193,6 @@ module.exports = {
   Parcel,
   Feature,
   VoxelField,
-  Animation,
   Vector3,
   Quaternion,
   Vector2,
