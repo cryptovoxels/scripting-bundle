@@ -2,6 +2,7 @@
 
 // const uuid = require('uuid/v4')
 import { Vector3 } from './vendor/babylonjs/Maths/math'
+import { Animation } from './vendor/babylonjs/Animations/animation'
 
 const throttle = require('lodash.throttle')
 const EventEmitter = require('events')
@@ -101,8 +102,6 @@ class Feature extends EventEmitter {
     })
   }
 
-  /*
-
   createAnimation (key) {
     return new Animation(null, key, 30, Animation.ANIMATIONTYPE_VECTOR3)
   }
@@ -125,8 +124,6 @@ class Feature extends EventEmitter {
       animations
     })
   }
-
-  */
 
   remove () {
     this.parcel.removeFeature(this)

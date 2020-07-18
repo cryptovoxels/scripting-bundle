@@ -1,4 +1,5 @@
 import { Vector3, Quaternion, Vector2, Color3, Matrix } from './vendor/babylonjs/Maths/math'
+import { Animation } from './vendor/babylonjs/Animations/animation'  
 
 const uuid = require('uuid/v4')
 const EventEmitter = require('events')
@@ -192,6 +193,7 @@ class Parcel extends EventEmitter {
 module.exports = {
   Parcel,
   Feature,
+  Animation,
   VoxelField,
   Vector3,
   Quaternion,
