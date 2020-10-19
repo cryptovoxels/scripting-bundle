@@ -63,6 +63,12 @@ test('scale', t => {
   t.end()
 })
 
+test('type', t => {
+  const f = new Feature({}, desc)
+  t.equal(f.type, 'sign')
+  t.end()
+})
+
 test('vec3 proxies', (t) => {
   const p = {
     broadcast: (mesg) => {

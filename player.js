@@ -1,4 +1,4 @@
-import { Vector3, Quaternion, Vector2, Color3, Matrix } from './vendor/babylonjs/Maths/math'
+import { Vector3 } from './vendor/babylonjs/Maths/math'
 
 const EventEmitter = require('events')
 
@@ -10,8 +10,8 @@ class Player extends EventEmitter {
 
     this.name = description && description.name
     this.wallet = description && description.wallet
-    this.position = new Vector3
-    this.rotation = new Vector3
+    this.position = new Vector3()
+    this.rotation = new Vector3()
   }
 
   // get name () {

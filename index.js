@@ -1,5 +1,7 @@
+/* global parcel,self,postMessage */
+
 import { Vector3, Quaternion, Vector2, Color3, Matrix } from './vendor/babylonjs/Maths/math'
-import { Animation } from './vendor/babylonjs/Animations/animation'  
+import { Animation } from './vendor/babylonjs/Animations/animation'
 
 const uuid = require('uuid/v4')
 const EventEmitter = require('events')
@@ -16,7 +18,6 @@ class Parcel extends EventEmitter {
 
     this.id = id
 
-    this.clients = []
     this.players = []
     this.featureList = []
   }
@@ -25,6 +26,8 @@ class Parcel extends EventEmitter {
   }
 
   onMessage (ws, msg) {
+    // console.log('onMessage', ws, msg)
+
     if (msg.type === 'playerenter') {
       ws.player = new Player(msg.player)
 
@@ -48,7 +51,7 @@ class Parcel extends EventEmitter {
         return
       }
 
-      let e = Object.assign({}, msg.event, { player: ws.player })
+      const e = Object.assign({}, msg.event, { player: ws.player })
 
       if (e.point) {
         e.point = Vector3.FromArray(e.point)
@@ -93,15 +96,8 @@ class Parcel extends EventEmitter {
   broadcast (message) {
     const packet = JSON.stringify(message)
 
-    // console.log(message)
-
-    this.clients.forEach(ws => {
-      try {
-        ws.send(packet)
-      } catch (e) {
-        // can be caused by disconnected clients we somehow missed
-      }
-    })
+    // console.log('broadcast', packet)
+    postMessage(packet)
   }
 
   fetch () {
@@ -186,6 +182,28 @@ class Parcel extends EventEmitter {
 
     if (i > -1) {
       this.featuresList.splice(i)
+    }
+  }
+
+  start () {
+    // fake websocket
+    const ws = {
+      readyState: 1
+    }
+
+    self.onmessage = (e) => {
+      if (e.data.type === 'join') {
+        // console.log('onmessage', JSON.stringify(e))
+
+        if (e.data.player) {
+          ws.player = e.data.player
+        }
+
+        parcel.onMessage(ws, e.data)
+        // parcel.clients.push(ws)
+      } else {
+        parcel.onMessage(ws, e.data)
+      }
     }
   }
 }

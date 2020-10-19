@@ -28,6 +28,7 @@
     1: [ function(require, module, exports) {
         "use strict";
         var _math = require("./vendor/babylonjs/Maths/math");
+        var _animation = require("./vendor/babylonjs/Animations/animation");
         const throttle = require("lodash.throttle");
         const EventEmitter = require("events");
         class Feature extends EventEmitter {
@@ -86,11 +87,37 @@
                 this._rotation.set(this._content.rotation[0], this._content.rotation[1], this._content.rotation[2]);
                 this._scale.set(this._content.scale[0], this._content.scale[1], this._content.scale[2]);
             }
+            clone() {
+                let d = JSON.parse(JSON.stringify(this.description));
+                delete d.id;
+                delete d.uuid;
+                let c = this.parcel.createFeature(this.type);
+                c.set(d);
+                return c;
+            }
             save() {
                 this.parcel.broadcast({
                     type: "update",
                     uuid: this.uuid,
                     content: this._content
+                });
+            }
+            createAnimation(key) {
+                return new _animation.Animation(null, key, 30, _animation.Animation.ANIMATIONTYPE_VECTOR3);
+            }
+            startAnimations(animationArray) {
+                const animations = animationArray.map(a => {
+                    const animation = a.clone();
+                    animation._keys.unshift({
+                        frame: 0,
+                        value: this[animation.targetProperty].clone()
+                    });
+                    return animation.serialize();
+                });
+                this.parcel.broadcast({
+                    type: "animate",
+                    uuid: this.uuid,
+                    animations: animations
                 });
             }
             remove() {
@@ -101,6 +128,18 @@
             play() {
                 this.parcel.broadcast({
                     type: "play",
+                    uuid: this.uuid
+                });
+            }
+            pause() {
+                this.parcel.broadcast({
+                    type: "pause",
+                    uuid: this.uuid
+                });
+            }
+            stop() {
+                this.parcel.broadcast({
+                    type: "stop",
                     uuid: this.uuid
                 });
             }
@@ -117,6 +156,38 @@
             play() {
                 this.parcel.broadcast({
                     type: "play",
+                    uuid: this.uuid
+                });
+            }
+            pause() {
+                this.parcel.broadcast({
+                    type: "pause",
+                    uuid: this.uuid
+                });
+            }
+            stop() {
+                this.parcel.broadcast({
+                    type: "stop",
+                    uuid: this.uuid
+                });
+            }
+        }
+        class Youtube extends Feature {
+            play() {
+                this.parcel.broadcast({
+                    type: "play",
+                    uuid: this.uuid
+                });
+            }
+            pause() {
+                this.parcel.broadcast({
+                    type: "pause",
+                    uuid: this.uuid
+                });
+            }
+            stop() {
+                this.parcel.broadcast({
+                    type: "stop",
                     uuid: this.uuid
                 });
             }
@@ -149,6 +220,8 @@
                 return new Audio(parcel, obj);
             } else if (obj.type === "video") {
                 return new Video(parcel, obj);
+            } else if (obj.type === "youtube") {
+                return new Youtube(parcel, obj);
             } else if (obj.type === "vid-screen") {
                 return new VidScreen(parcel, obj);
             } else if (obj.type === "text-input") {
@@ -159,13 +232,15 @@
         };
         module.exports = Feature;
     }, {
-        "./vendor/babylonjs/Maths/math": 8,
-        events: 12,
+        "./vendor/babylonjs/Animations/animation": 9,
+        "./vendor/babylonjs/Maths/math": 13,
+        events: 25,
         "lodash.throttle": 3
     } ],
     2: [ function(require, module, exports) {
         "use strict";
         var _math = require("./vendor/babylonjs/Maths/math");
+        var _animation = require("./vendor/babylonjs/Animations/animation");
         const uuid = require("uuid/v4");
         const EventEmitter = require("events");
         const Feature = require("./feature");
@@ -175,13 +250,12 @@
             constructor(id) {
                 super();
                 this.id = id;
-                this.clients = [];
                 this.players = [];
                 this.featureList = [];
             }
             listen(port) {}
             onMessage(ws, msg) {
-                if (msg.type === "join") {
+                if (msg.type === "playerenter") {
                     ws.player = new Player(msg.player);
                     this.join(ws.player);
                     return;
@@ -189,7 +263,7 @@
                 if (!ws.player) {
                     return;
                 }
-                if (msg.type === "leave") {
+                if (msg.type === "playerleave") {
                     this.leave(ws.player);
                 } else if (msg.type === "move") {
                     ws.player.onMove(msg);
@@ -199,9 +273,14 @@
                         console.log("cant find feature " + msg.uuid);
                         return;
                     }
-                    f.emit("click", Object.assign({}, msg.event, {
+                    let e = Object.assign({}, msg.event, {
                         player: ws.player
-                    }));
+                    });
+                    if (e.point) {
+                        e.point = _math.Vector3.FromArray(e.point);
+                        e.normal = _math.Vector3.FromArray(e.normal);
+                    }
+                    f.emit("click", e);
                 } else if (msg.type === "keys") {
                     const f = this.getFeatureByUuid(msg.uuid);
                     if (!f) return;
@@ -233,11 +312,7 @@
             }
             broadcast(message) {
                 const packet = JSON.stringify(message);
-                this.clients.forEach(ws => {
-                    try {
-                        ws.send(packet);
-                    } catch (e) {}
-                });
+                postMessage(packet);
             }
             fetch() {}
             debug() {
@@ -296,10 +371,26 @@
                     this.featuresList.splice(i);
                 }
             }
+            start() {
+                let ws = {
+                    readyState: 1
+                };
+                self.onmessage = e => {
+                    if (e.data.type == "join") {
+                        if (e.data.player) {
+                            ws.player = e.data.player;
+                        }
+                        parcel.onMessage(ws, e.data);
+                    } else {
+                        parcel.onMessage(ws, e.data);
+                    }
+                };
+            }
         }
         module.exports = {
             Parcel: Parcel,
             Feature: Feature,
+            Animation: _animation.Animation,
             VoxelField: VoxelField,
             Vector3: _math.Vector3,
             Quaternion: _math.Quaternion,
@@ -312,11 +403,12 @@
         }
     }, {
         "./feature": 1,
-        "./player": 7,
-        "./vendor/babylonjs/Maths/math": 8,
-        "./voxel-field": 11,
-        events: 12,
-        "uuid/v4": 6
+        "./player": 8,
+        "./vendor/babylonjs/Animations/animation": 9,
+        "./vendor/babylonjs/Maths/math": 13,
+        "./voxel-field": 24,
+        events: 25,
+        "uuid/v4": 7
     } ],
     3: [ function(require, module, exports) {
         (function(global) {
@@ -464,6 +556,374 @@
         }).call(this, typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {});
     }, {} ],
     4: [ function(require, module, exports) {
+        (function(global) {
+            var __extends;
+            var __assign;
+            var __rest;
+            var __decorate;
+            var __param;
+            var __metadata;
+            var __awaiter;
+            var __generator;
+            var __exportStar;
+            var __values;
+            var __read;
+            var __spread;
+            var __spreadArrays;
+            var __await;
+            var __asyncGenerator;
+            var __asyncDelegator;
+            var __asyncValues;
+            var __makeTemplateObject;
+            var __importStar;
+            var __importDefault;
+            (function(factory) {
+                var root = typeof global === "object" ? global : typeof self === "object" ? self : typeof this === "object" ? this : {};
+                if (typeof define === "function" && define.amd) {
+                    define("tslib", [ "exports" ], (function(exports) {
+                        factory(createExporter(root, createExporter(exports)));
+                    }));
+                } else if (typeof module === "object" && typeof module.exports === "object") {
+                    factory(createExporter(root, createExporter(module.exports)));
+                } else {
+                    factory(createExporter(root));
+                }
+                function createExporter(exports, previous) {
+                    if (exports !== root) {
+                        if (typeof Object.create === "function") {
+                            Object.defineProperty(exports, "__esModule", {
+                                value: true
+                            });
+                        } else {
+                            exports.__esModule = true;
+                        }
+                    }
+                    return function(id, v) {
+                        return exports[id] = previous ? previous(id, v) : v;
+                    };
+                }
+            })((function(exporter) {
+                var extendStatics = Object.setPrototypeOf || {
+                    __proto__: []
+                } instanceof Array && function(d, b) {
+                    d.__proto__ = b;
+                } || function(d, b) {
+                    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+                };
+                __extends = function(d, b) {
+                    extendStatics(d, b);
+                    function __() {
+                        this.constructor = d;
+                    }
+                    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __);
+                };
+                __assign = Object.assign || function(t) {
+                    for (var s, i = 1, n = arguments.length; i < n; i++) {
+                        s = arguments[i];
+                        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+                    }
+                    return t;
+                };
+                __rest = function(s, e) {
+                    var t = {};
+                    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0) t[p] = s[p];
+                    if (s != null && typeof Object.getOwnPropertySymbols === "function") for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+                        if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i])) t[p[i]] = s[p[i]];
+                    }
+                    return t;
+                };
+                __decorate = function(decorators, target, key, desc) {
+                    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+                    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+                    return c > 3 && r && Object.defineProperty(target, key, r), r;
+                };
+                __param = function(paramIndex, decorator) {
+                    return function(target, key) {
+                        decorator(target, key, paramIndex);
+                    };
+                };
+                __metadata = function(metadataKey, metadataValue) {
+                    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
+                };
+                __awaiter = function(thisArg, _arguments, P, generator) {
+                    return new (P || (P = Promise))((function(resolve, reject) {
+                        function fulfilled(value) {
+                            try {
+                                step(generator.next(value));
+                            } catch (e) {
+                                reject(e);
+                            }
+                        }
+                        function rejected(value) {
+                            try {
+                                step(generator["throw"](value));
+                            } catch (e) {
+                                reject(e);
+                            }
+                        }
+                        function step(result) {
+                            result.done ? resolve(result.value) : new P((function(resolve) {
+                                resolve(result.value);
+                            })).then(fulfilled, rejected);
+                        }
+                        step((generator = generator.apply(thisArg, _arguments || [])).next());
+                    }));
+                };
+                __generator = function(thisArg, body) {
+                    var _ = {
+                        label: 0,
+                        sent: function() {
+                            if (t[0] & 1) throw t[1];
+                            return t[1];
+                        },
+                        trys: [],
+                        ops: []
+                    }, f, y, t, g;
+                    return g = {
+                        next: verb(0),
+                        throw: verb(1),
+                        return: verb(2)
+                    }, typeof Symbol === "function" && (g[Symbol.iterator] = function() {
+                        return this;
+                    }), g;
+                    function verb(n) {
+                        return function(v) {
+                            return step([ n, v ]);
+                        };
+                    }
+                    function step(op) {
+                        if (f) throw new TypeError("Generator is already executing.");
+                        while (_) try {
+                            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 
+                            0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+                            if (y = 0, t) op = [ op[0] & 2, t.value ];
+                            switch (op[0]) {
+                              case 0:
+                              case 1:
+                                t = op;
+                                break;
+
+                              case 4:
+                                _.label++;
+                                return {
+                                    value: op[1],
+                                    done: false
+                                };
+
+                              case 5:
+                                _.label++;
+                                y = op[1];
+                                op = [ 0 ];
+                                continue;
+
+                              case 7:
+                                op = _.ops.pop();
+                                _.trys.pop();
+                                continue;
+
+                              default:
+                                if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+                                    _ = 0;
+                                    continue;
+                                }
+                                if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+                                    _.label = op[1];
+                                    break;
+                                }
+                                if (op[0] === 6 && _.label < t[1]) {
+                                    _.label = t[1];
+                                    t = op;
+                                    break;
+                                }
+                                if (t && _.label < t[2]) {
+                                    _.label = t[2];
+                                    _.ops.push(op);
+                                    break;
+                                }
+                                if (t[2]) _.ops.pop();
+                                _.trys.pop();
+                                continue;
+                            }
+                            op = body.call(thisArg, _);
+                        } catch (e) {
+                            op = [ 6, e ];
+                            y = 0;
+                        } finally {
+                            f = t = 0;
+                        }
+                        if (op[0] & 5) throw op[1];
+                        return {
+                            value: op[0] ? op[1] : void 0,
+                            done: true
+                        };
+                    }
+                };
+                __exportStar = function(m, exports) {
+                    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+                };
+                __values = function(o) {
+                    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+                    if (m) return m.call(o);
+                    return {
+                        next: function() {
+                            if (o && i >= o.length) o = void 0;
+                            return {
+                                value: o && o[i++],
+                                done: !o
+                            };
+                        }
+                    };
+                };
+                __read = function(o, n) {
+                    var m = typeof Symbol === "function" && o[Symbol.iterator];
+                    if (!m) return o;
+                    var i = m.call(o), r, ar = [], e;
+                    try {
+                        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+                    } catch (error) {
+                        e = {
+                            error: error
+                        };
+                    } finally {
+                        try {
+                            if (r && !r.done && (m = i["return"])) m.call(i);
+                        } finally {
+                            if (e) throw e.error;
+                        }
+                    }
+                    return ar;
+                };
+                __spread = function() {
+                    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+                    return ar;
+                };
+                __spreadArrays = function() {
+                    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+                    for (var r = Array(s), k = 0, i = 0; i < il; i++) for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, 
+                    k++) r[k] = a[j];
+                    return r;
+                };
+                __await = function(v) {
+                    return this instanceof __await ? (this.v = v, this) : new __await(v);
+                };
+                __asyncGenerator = function(thisArg, _arguments, generator) {
+                    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+                    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+                    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() {
+                        return this;
+                    }, i;
+                    function verb(n) {
+                        if (g[n]) i[n] = function(v) {
+                            return new Promise((function(a, b) {
+                                q.push([ n, v, a, b ]) > 1 || resume(n, v);
+                            }));
+                        };
+                    }
+                    function resume(n, v) {
+                        try {
+                            step(g[n](v));
+                        } catch (e) {
+                            settle(q[0][3], e);
+                        }
+                    }
+                    function step(r) {
+                        r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);
+                    }
+                    function fulfill(value) {
+                        resume("next", value);
+                    }
+                    function reject(value) {
+                        resume("throw", value);
+                    }
+                    function settle(f, v) {
+                        if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]);
+                    }
+                };
+                __asyncDelegator = function(o) {
+                    var i, p;
+                    return i = {}, verb("next"), verb("throw", (function(e) {
+                        throw e;
+                    })), verb("return"), i[Symbol.iterator] = function() {
+                        return this;
+                    }, i;
+                    function verb(n, f) {
+                        i[n] = o[n] ? function(v) {
+                            return (p = !p) ? {
+                                value: __await(o[n](v)),
+                                done: n === "return"
+                            } : f ? f(v) : v;
+                        } : f;
+                    }
+                };
+                __asyncValues = function(o) {
+                    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+                    var m = o[Symbol.asyncIterator], i;
+                    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), 
+                    i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() {
+                        return this;
+                    }, i);
+                    function verb(n) {
+                        i[n] = o[n] && function(v) {
+                            return new Promise((function(resolve, reject) {
+                                v = o[n](v), settle(resolve, reject, v.done, v.value);
+                            }));
+                        };
+                    }
+                    function settle(resolve, reject, d, v) {
+                        Promise.resolve(v).then((function(v) {
+                            resolve({
+                                value: v,
+                                done: d
+                            });
+                        }), reject);
+                    }
+                };
+                __makeTemplateObject = function(cooked, raw) {
+                    if (Object.defineProperty) {
+                        Object.defineProperty(cooked, "raw", {
+                            value: raw
+                        });
+                    } else {
+                        cooked.raw = raw;
+                    }
+                    return cooked;
+                };
+                __importStar = function(mod) {
+                    if (mod && mod.__esModule) return mod;
+                    var result = {};
+                    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+                    result["default"] = mod;
+                    return result;
+                };
+                __importDefault = function(mod) {
+                    return mod && mod.__esModule ? mod : {
+                        default: mod
+                    };
+                };
+                exporter("__extends", __extends);
+                exporter("__assign", __assign);
+                exporter("__rest", __rest);
+                exporter("__decorate", __decorate);
+                exporter("__param", __param);
+                exporter("__metadata", __metadata);
+                exporter("__awaiter", __awaiter);
+                exporter("__generator", __generator);
+                exporter("__exportStar", __exportStar);
+                exporter("__values", __values);
+                exporter("__read", __read);
+                exporter("__spread", __spread);
+                exporter("__spreadArrays", __spreadArrays);
+                exporter("__await", __await);
+                exporter("__asyncGenerator", __asyncGenerator);
+                exporter("__asyncDelegator", __asyncDelegator);
+                exporter("__asyncValues", __asyncValues);
+                exporter("__makeTemplateObject", __makeTemplateObject);
+                exporter("__importStar", __importStar);
+                exporter("__importDefault", __importDefault);
+            }));
+        }).call(this, typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {});
+    }, {} ],
+    5: [ function(require, module, exports) {
         var byteToHex = [];
         for (var i = 0; i < 256; ++i) {
             byteToHex[i] = (i + 256).toString(16).substr(1);
@@ -475,7 +935,7 @@
         }
         module.exports = bytesToUuid;
     }, {} ],
-    5: [ function(require, module, exports) {
+    6: [ function(require, module, exports) {
         var getRandomValues = typeof crypto != "undefined" && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto != "undefined" && typeof window.msCrypto.getRandomValues == "function" && msCrypto.getRandomValues.bind(msCrypto);
         if (getRandomValues) {
             var rnds8 = new Uint8Array(16);
@@ -494,7 +954,7 @@
             };
         }
     }, {} ],
-    6: [ function(require, module, exports) {
+    7: [ function(require, module, exports) {
         var rng = require("./lib/rng");
         var bytesToUuid = require("./lib/bytesToUuid");
         function v4(options, buf, offset) {
@@ -516,35 +976,738 @@
         }
         module.exports = v4;
     }, {
-        "./lib/bytesToUuid": 4,
-        "./lib/rng": 5
+        "./lib/bytesToUuid": 5,
+        "./lib/rng": 6
     } ],
-    7: [ function(require, module, exports) {
+    8: [ function(require, module, exports) {
         "use strict";
+        var _math = require("./vendor/babylonjs/Maths/math");
         const EventEmitter = require("events");
         class Player extends EventEmitter {
             constructor(description) {
                 super();
                 Object.assign(this, description);
-            }
-            get name() {
-                return this.user.name;
-            }
-            get wallet() {
-                return this.user.wallet;
-            }
-            get uuid() {
-                return this.avatar.uuid;
+                this.name = description && description.name;
+                this.wallet = description && description.wallet;
+                this.position = new _math.Vector3;
+                this.rotation = new _math.Vector3;
             }
             onMove(msg) {
+                this.position.set(msg.position[0], msg.position[1], msg.position[2]);
+                this.rotation.set(msg.rotation[0], msg.rotation[1], msg.rotation[2]);
                 this.emit("move", msg);
             }
         }
         module.exports = Player;
     }, {
-        events: 12
+        "./vendor/babylonjs/Maths/math": 13,
+        events: 25
     } ],
-    8: [ function(require, module, exports) {
+    9: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.Animation = exports._IAnimationState = void 0;
+        var _math = require("../Maths/math");
+        var _math2 = require("../Maths/math.scalar");
+        var _decorators = require("../Misc/decorators");
+        var _typeStore = require("../Misc/typeStore");
+        var _animationKey = require("./animationKey");
+        var _animationRange = require("./animationRange");
+        var _node = require("../node");
+        var _IAnimationState = function() {
+            function _IAnimationState() {}
+            return _IAnimationState;
+        }();
+        exports._IAnimationState = _IAnimationState;
+        var Animation = function() {
+            function Animation(name, targetProperty, framePerSecond, dataType, loopMode, enableBlending) {
+                this.name = name;
+                this.targetProperty = targetProperty;
+                this.framePerSecond = framePerSecond;
+                this.dataType = dataType;
+                this.loopMode = loopMode;
+                this.enableBlending = enableBlending;
+                this._runtimeAnimations = new Array;
+                this._events = new Array;
+                this.blendingSpeed = .01;
+                this._ranges = {};
+                this.targetPropertyPath = targetProperty.split(".");
+                this.dataType = dataType;
+                this.loopMode = loopMode === undefined ? Animation.ANIMATIONLOOPMODE_CYCLE : loopMode;
+            }
+            Animation._PrepareAnimation = function(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction) {
+                var dataType = undefined;
+                if (!isNaN(parseFloat(from)) && isFinite(from)) {
+                    dataType = Animation.ANIMATIONTYPE_FLOAT;
+                } else if (from instanceof _math.Quaternion) {
+                    dataType = Animation.ANIMATIONTYPE_QUATERNION;
+                } else if (from instanceof _math.Vector3) {
+                    dataType = Animation.ANIMATIONTYPE_VECTOR3;
+                } else if (from instanceof _math.Vector2) {
+                    dataType = Animation.ANIMATIONTYPE_VECTOR2;
+                } else if (from instanceof _math.Color3) {
+                    dataType = Animation.ANIMATIONTYPE_COLOR3;
+                } else if (from instanceof _math.Size) {
+                    dataType = Animation.ANIMATIONTYPE_SIZE;
+                }
+                if (dataType == undefined) {
+                    return null;
+                }
+                var animation = new Animation(name, targetProperty, framePerSecond, dataType, loopMode);
+                var keys = [ {
+                    frame: 0,
+                    value: from
+                }, {
+                    frame: totalFrame,
+                    value: to
+                } ];
+                animation.setKeys(keys);
+                if (easingFunction !== undefined) {
+                    animation.setEasingFunction(easingFunction);
+                }
+                return animation;
+            };
+            Animation.CreateAnimation = function(property, animationType, framePerSecond, easingFunction) {
+                var animation = new Animation(property + "Animation", property, framePerSecond, animationType, Animation.ANIMATIONLOOPMODE_CONSTANT);
+                animation.setEasingFunction(easingFunction);
+                return animation;
+            };
+            Animation.CreateAndStartAnimation = function(name, node, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction, onAnimationEnd) {
+                var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
+                if (!animation) {
+                    return null;
+                }
+                return node.getScene().beginDirectAnimation(node, [ animation ], 0, totalFrame, animation.loopMode === 1, 1, onAnimationEnd);
+            };
+            Animation.CreateAndStartHierarchyAnimation = function(name, node, directDescendantsOnly, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction, onAnimationEnd) {
+                var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
+                if (!animation) {
+                    return null;
+                }
+                var scene = node.getScene();
+                return scene.beginDirectHierarchyAnimation(node, directDescendantsOnly, [ animation ], 0, totalFrame, animation.loopMode === 1, 1, onAnimationEnd);
+            };
+            Animation.CreateMergeAndStartAnimation = function(name, node, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction, onAnimationEnd) {
+                var animation = Animation._PrepareAnimation(name, targetProperty, framePerSecond, totalFrame, from, to, loopMode, easingFunction);
+                if (!animation) {
+                    return null;
+                }
+                node.animations.push(animation);
+                return node.getScene().beginAnimation(node, 0, totalFrame, animation.loopMode === 1, 1, onAnimationEnd);
+            };
+            Animation.TransitionTo = function(property, targetValue, host, scene, frameRate, transition, duration, onAnimationEnd) {
+                if (onAnimationEnd === void 0) {
+                    onAnimationEnd = null;
+                }
+                if (duration <= 0) {
+                    host[property] = targetValue;
+                    if (onAnimationEnd) {
+                        onAnimationEnd();
+                    }
+                    return null;
+                }
+                var endFrame = frameRate * (duration / 1e3);
+                transition.setKeys([ {
+                    frame: 0,
+                    value: host[property].clone ? host[property].clone() : host[property]
+                }, {
+                    frame: endFrame,
+                    value: targetValue
+                } ]);
+                if (!host.animations) {
+                    host.animations = [];
+                }
+                host.animations.push(transition);
+                var animation = scene.beginAnimation(host, 0, endFrame, false);
+                animation.onAnimationEnd = onAnimationEnd;
+                return animation;
+            };
+            Object.defineProperty(Animation.prototype, "runtimeAnimations", {
+                get: function() {
+                    return this._runtimeAnimations;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation.prototype, "hasRunningRuntimeAnimations", {
+                get: function() {
+                    for (var _i = 0, _a = this._runtimeAnimations; _i < _a.length; _i++) {
+                        var runtimeAnimation = _a[_i];
+                        if (!runtimeAnimation.isStopped) {
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Animation.prototype.toString = function(fullDetails) {
+                var ret = "Name: " + this.name + ", property: " + this.targetProperty;
+                ret += ", datatype: " + [ "Float", "Vector3", "Quaternion", "Matrix", "Color3", "Vector2" ][this.dataType];
+                ret += ", nKeys: " + (this._keys ? this._keys.length : "none");
+                ret += ", nRanges: " + (this._ranges ? Object.keys(this._ranges).length : "none");
+                if (fullDetails) {
+                    ret += ", Ranges: {";
+                    var first = true;
+                    for (var name in this._ranges) {
+                        if (first) {
+                            ret += ", ";
+                            first = false;
+                        }
+                        ret += name;
+                    }
+                    ret += "}";
+                }
+                return ret;
+            };
+            Animation.prototype.addEvent = function(event) {
+                this._events.push(event);
+            };
+            Animation.prototype.removeEvents = function(frame) {
+                for (var index = 0; index < this._events.length; index++) {
+                    if (this._events[index].frame === frame) {
+                        this._events.splice(index, 1);
+                        index--;
+                    }
+                }
+            };
+            Animation.prototype.getEvents = function() {
+                return this._events;
+            };
+            Animation.prototype.createRange = function(name, from, to) {
+                if (!this._ranges[name]) {
+                    this._ranges[name] = new _animationRange.AnimationRange(name, from, to);
+                }
+            };
+            Animation.prototype.deleteRange = function(name, deleteFrames) {
+                if (deleteFrames === void 0) {
+                    deleteFrames = true;
+                }
+                var range = this._ranges[name];
+                if (!range) {
+                    return;
+                }
+                if (deleteFrames) {
+                    var from = range.from;
+                    var to = range.to;
+                    for (var key = this._keys.length - 1; key >= 0; key--) {
+                        if (this._keys[key].frame >= from && this._keys[key].frame <= to) {
+                            this._keys.splice(key, 1);
+                        }
+                    }
+                }
+                this._ranges[name] = null;
+            };
+            Animation.prototype.getRange = function(name) {
+                return this._ranges[name];
+            };
+            Animation.prototype.getKeys = function() {
+                return this._keys;
+            };
+            Animation.prototype.getHighestFrame = function() {
+                var ret = 0;
+                for (var key = 0, nKeys = this._keys.length; key < nKeys; key++) {
+                    if (ret < this._keys[key].frame) {
+                        ret = this._keys[key].frame;
+                    }
+                }
+                return ret;
+            };
+            Animation.prototype.getEasingFunction = function() {
+                return this._easingFunction;
+            };
+            Animation.prototype.setEasingFunction = function(easingFunction) {
+                this._easingFunction = easingFunction;
+            };
+            Animation.prototype.floatInterpolateFunction = function(startValue, endValue, gradient) {
+                return _math2.Scalar.Lerp(startValue, endValue, gradient);
+            };
+            Animation.prototype.floatInterpolateFunctionWithTangents = function(startValue, outTangent, endValue, inTangent, gradient) {
+                return _math2.Scalar.Hermite(startValue, outTangent, endValue, inTangent, gradient);
+            };
+            Animation.prototype.quaternionInterpolateFunction = function(startValue, endValue, gradient) {
+                return _math.Quaternion.Slerp(startValue, endValue, gradient);
+            };
+            Animation.prototype.quaternionInterpolateFunctionWithTangents = function(startValue, outTangent, endValue, inTangent, gradient) {
+                return _math.Quaternion.Hermite(startValue, outTangent, endValue, inTangent, gradient).normalize();
+            };
+            Animation.prototype.vector3InterpolateFunction = function(startValue, endValue, gradient) {
+                return _math.Vector3.Lerp(startValue, endValue, gradient);
+            };
+            Animation.prototype.vector3InterpolateFunctionWithTangents = function(startValue, outTangent, endValue, inTangent, gradient) {
+                return _math.Vector3.Hermite(startValue, outTangent, endValue, inTangent, gradient);
+            };
+            Animation.prototype.vector2InterpolateFunction = function(startValue, endValue, gradient) {
+                return _math.Vector2.Lerp(startValue, endValue, gradient);
+            };
+            Animation.prototype.vector2InterpolateFunctionWithTangents = function(startValue, outTangent, endValue, inTangent, gradient) {
+                return _math.Vector2.Hermite(startValue, outTangent, endValue, inTangent, gradient);
+            };
+            Animation.prototype.sizeInterpolateFunction = function(startValue, endValue, gradient) {
+                return _math.Size.Lerp(startValue, endValue, gradient);
+            };
+            Animation.prototype.color3InterpolateFunction = function(startValue, endValue, gradient) {
+                return _math.Color3.Lerp(startValue, endValue, gradient);
+            };
+            Animation.prototype._getKeyValue = function(value) {
+                if (typeof value === "function") {
+                    return value();
+                }
+                return value;
+            };
+            Animation.prototype._interpolate = function(currentFrame, state) {
+                if (state.loopMode === Animation.ANIMATIONLOOPMODE_CONSTANT && state.repeatCount > 0) {
+                    return state.highLimitValue.clone ? state.highLimitValue.clone() : state.highLimitValue;
+                }
+                var keys = this._keys;
+                if (keys.length === 1) {
+                    return this._getKeyValue(keys[0].value);
+                }
+                var startKeyIndex = state.key;
+                if (keys[startKeyIndex].frame >= currentFrame) {
+                    while (startKeyIndex - 1 >= 0 && keys[startKeyIndex].frame >= currentFrame) {
+                        startKeyIndex--;
+                    }
+                }
+                for (var key = startKeyIndex; key < keys.length; key++) {
+                    var endKey = keys[key + 1];
+                    if (endKey.frame >= currentFrame) {
+                        state.key = key;
+                        var startKey = keys[key];
+                        var startValue = this._getKeyValue(startKey.value);
+                        if (startKey.interpolation === _animationKey.AnimationKeyInterpolation.STEP) {
+                            return startValue;
+                        }
+                        var endValue = this._getKeyValue(endKey.value);
+                        var useTangent = startKey.outTangent !== undefined && endKey.inTangent !== undefined;
+                        var frameDelta = endKey.frame - startKey.frame;
+                        var gradient = (currentFrame - startKey.frame) / frameDelta;
+                        var easingFunction = this.getEasingFunction();
+                        if (easingFunction != null) {
+                            gradient = easingFunction.ease(gradient);
+                        }
+                        switch (this.dataType) {
+                          case Animation.ANIMATIONTYPE_FLOAT:
+                            var floatValue = useTangent ? this.floatInterpolateFunctionWithTangents(startValue, startKey.outTangent * frameDelta, endValue, endKey.inTangent * frameDelta, gradient) : this.floatInterpolateFunction(startValue, endValue, gradient);
+                            switch (state.loopMode) {
+                              case Animation.ANIMATIONLOOPMODE_CYCLE:
+                              case Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                return floatValue;
+
+                              case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return state.offsetValue * state.repeatCount + floatValue;
+                            }
+                            break;
+
+                          case Animation.ANIMATIONTYPE_QUATERNION:
+                            var quatValue = useTangent ? this.quaternionInterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.quaternionInterpolateFunction(startValue, endValue, gradient);
+                            switch (state.loopMode) {
+                              case Animation.ANIMATIONLOOPMODE_CYCLE:
+                              case Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                return quatValue;
+
+                              case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return quatValue.addInPlace(state.offsetValue.scale(state.repeatCount));
+                            }
+                            return quatValue;
+
+                          case Animation.ANIMATIONTYPE_VECTOR3:
+                            var vec3Value = useTangent ? this.vector3InterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.vector3InterpolateFunction(startValue, endValue, gradient);
+                            switch (state.loopMode) {
+                              case Animation.ANIMATIONLOOPMODE_CYCLE:
+                              case Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                return vec3Value;
+
+                              case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return vec3Value.add(state.offsetValue.scale(state.repeatCount));
+                            }
+
+                          case Animation.ANIMATIONTYPE_VECTOR2:
+                            var vec2Value = useTangent ? this.vector2InterpolateFunctionWithTangents(startValue, startKey.outTangent.scale(frameDelta), endValue, endKey.inTangent.scale(frameDelta), gradient) : this.vector2InterpolateFunction(startValue, endValue, gradient);
+                            switch (state.loopMode) {
+                              case Animation.ANIMATIONLOOPMODE_CYCLE:
+                              case Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                return vec2Value;
+
+                              case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return vec2Value.add(state.offsetValue.scale(state.repeatCount));
+                            }
+
+                          case Animation.ANIMATIONTYPE_SIZE:
+                            switch (state.loopMode) {
+                              case Animation.ANIMATIONLOOPMODE_CYCLE:
+                              case Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                return this.sizeInterpolateFunction(startValue, endValue, gradient);
+
+                              case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return this.sizeInterpolateFunction(startValue, endValue, gradient).add(state.offsetValue.scale(state.repeatCount));
+                            }
+
+                          case Animation.ANIMATIONTYPE_COLOR3:
+                            switch (state.loopMode) {
+                              case Animation.ANIMATIONLOOPMODE_CYCLE:
+                              case Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                return this.color3InterpolateFunction(startValue, endValue, gradient);
+
+                              case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return this.color3InterpolateFunction(startValue, endValue, gradient).add(state.offsetValue.scale(state.repeatCount));
+                            }
+
+                          case Animation.ANIMATIONTYPE_MATRIX:
+                            switch (state.loopMode) {
+                              case Animation.ANIMATIONLOOPMODE_CYCLE:
+                              case Animation.ANIMATIONLOOPMODE_CONSTANT:
+                                if (Animation.AllowMatricesInterpolation) {
+                                    return this.matrixInterpolateFunction(startValue, endValue, gradient, state.workValue);
+                                }
+
+                              case Animation.ANIMATIONLOOPMODE_RELATIVE:
+                                return startValue;
+                            }
+
+                          default:
+                            break;
+                        }
+                        break;
+                    }
+                }
+                return this._getKeyValue(keys[keys.length - 1].value);
+            };
+            Animation.prototype.matrixInterpolateFunction = function(startValue, endValue, gradient, result) {
+                if (Animation.AllowMatrixDecomposeForInterpolation) {
+                    if (result) {
+                        _math.Matrix.DecomposeLerpToRef(startValue, endValue, gradient, result);
+                        return result;
+                    }
+                    return _math.Matrix.DecomposeLerp(startValue, endValue, gradient);
+                }
+                if (result) {
+                    _math.Matrix.LerpToRef(startValue, endValue, gradient, result);
+                    return result;
+                }
+                return _math.Matrix.Lerp(startValue, endValue, gradient);
+            };
+            Animation.prototype.clone = function() {
+                var clone = new Animation(this.name, this.targetPropertyPath.join("."), this.framePerSecond, this.dataType, this.loopMode);
+                clone.enableBlending = this.enableBlending;
+                clone.blendingSpeed = this.blendingSpeed;
+                if (this._keys) {
+                    clone.setKeys(this._keys);
+                }
+                if (this._ranges) {
+                    clone._ranges = {};
+                    for (var name in this._ranges) {
+                        var range = this._ranges[name];
+                        if (!range) {
+                            continue;
+                        }
+                        clone._ranges[name] = range.clone();
+                    }
+                }
+                return clone;
+            };
+            Animation.prototype.setKeys = function(values) {
+                this._keys = values.slice(0);
+            };
+            Animation.prototype.serialize = function() {
+                var serializationObject = {};
+                serializationObject.name = this.name;
+                serializationObject.property = this.targetProperty;
+                serializationObject.framePerSecond = this.framePerSecond;
+                serializationObject.dataType = this.dataType;
+                serializationObject.loopBehavior = this.loopMode;
+                serializationObject.enableBlending = this.enableBlending;
+                serializationObject.blendingSpeed = this.blendingSpeed;
+                var dataType = this.dataType;
+                serializationObject.keys = [];
+                var keys = this.getKeys();
+                for (var index = 0; index < keys.length; index++) {
+                    var animationKey = keys[index];
+                    var key = {};
+                    key.frame = animationKey.frame;
+                    switch (dataType) {
+                      case Animation.ANIMATIONTYPE_FLOAT:
+                        key.values = [ animationKey.value ];
+                        break;
+
+                      case Animation.ANIMATIONTYPE_QUATERNION:
+                      case Animation.ANIMATIONTYPE_MATRIX:
+                      case Animation.ANIMATIONTYPE_VECTOR3:
+                      case Animation.ANIMATIONTYPE_COLOR3:
+                        key.values = animationKey.value.asArray();
+                        break;
+                    }
+                    serializationObject.keys.push(key);
+                }
+                serializationObject.ranges = [];
+                for (var name in this._ranges) {
+                    var source = this._ranges[name];
+                    if (!source) {
+                        continue;
+                    }
+                    var range = {};
+                    range.name = name;
+                    range.from = source.from;
+                    range.to = source.to;
+                    serializationObject.ranges.push(range);
+                }
+                return serializationObject;
+            };
+            Object.defineProperty(Animation, "ANIMATIONTYPE_FLOAT", {
+                get: function() {
+                    return Animation._ANIMATIONTYPE_FLOAT;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONTYPE_VECTOR3", {
+                get: function() {
+                    return Animation._ANIMATIONTYPE_VECTOR3;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONTYPE_VECTOR2", {
+                get: function() {
+                    return Animation._ANIMATIONTYPE_VECTOR2;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONTYPE_SIZE", {
+                get: function() {
+                    return Animation._ANIMATIONTYPE_SIZE;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONTYPE_QUATERNION", {
+                get: function() {
+                    return Animation._ANIMATIONTYPE_QUATERNION;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONTYPE_MATRIX", {
+                get: function() {
+                    return Animation._ANIMATIONTYPE_MATRIX;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONTYPE_COLOR3", {
+                get: function() {
+                    return Animation._ANIMATIONTYPE_COLOR3;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONLOOPMODE_RELATIVE", {
+                get: function() {
+                    return Animation._ANIMATIONLOOPMODE_RELATIVE;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONLOOPMODE_CYCLE", {
+                get: function() {
+                    return Animation._ANIMATIONLOOPMODE_CYCLE;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Animation, "ANIMATIONLOOPMODE_CONSTANT", {
+                get: function() {
+                    return Animation._ANIMATIONLOOPMODE_CONSTANT;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Animation._UniversalLerp = function(left, right, amount) {
+                var constructor = left.constructor;
+                if (constructor.Lerp) {
+                    return constructor.Lerp(left, right, amount);
+                } else if (constructor.Slerp) {
+                    return constructor.Slerp(left, right, amount);
+                } else if (left.toFixed) {
+                    return left * (1 - amount) + amount * right;
+                } else {
+                    return right;
+                }
+            };
+            Animation.Parse = function(parsedAnimation) {
+                var animation = new Animation(parsedAnimation.name, parsedAnimation.property, parsedAnimation.framePerSecond, parsedAnimation.dataType, parsedAnimation.loopBehavior);
+                var dataType = parsedAnimation.dataType;
+                var keys = [];
+                var data;
+                var index;
+                if (parsedAnimation.enableBlending) {
+                    animation.enableBlending = parsedAnimation.enableBlending;
+                }
+                if (parsedAnimation.blendingSpeed) {
+                    animation.blendingSpeed = parsedAnimation.blendingSpeed;
+                }
+                for (index = 0; index < parsedAnimation.keys.length; index++) {
+                    var key = parsedAnimation.keys[index];
+                    var inTangent;
+                    var outTangent;
+                    switch (dataType) {
+                      case Animation.ANIMATIONTYPE_FLOAT:
+                        data = key.values[0];
+                        if (key.values.length >= 1) {
+                            inTangent = key.values[1];
+                        }
+                        if (key.values.length >= 2) {
+                            outTangent = key.values[2];
+                        }
+                        break;
+
+                      case Animation.ANIMATIONTYPE_QUATERNION:
+                        data = _math.Quaternion.FromArray(key.values);
+                        if (key.values.length >= 8) {
+                            var _inTangent = _math.Quaternion.FromArray(key.values.slice(4, 8));
+                            if (!_inTangent.equals(_math.Quaternion.Zero())) {
+                                inTangent = _inTangent;
+                            }
+                        }
+                        if (key.values.length >= 12) {
+                            var _outTangent = _math.Quaternion.FromArray(key.values.slice(8, 12));
+                            if (!_outTangent.equals(_math.Quaternion.Zero())) {
+                                outTangent = _outTangent;
+                            }
+                        }
+                        break;
+
+                      case Animation.ANIMATIONTYPE_MATRIX:
+                        data = _math.Matrix.FromArray(key.values);
+                        break;
+
+                      case Animation.ANIMATIONTYPE_COLOR3:
+                        data = _math.Color3.FromArray(key.values);
+                        break;
+
+                      case Animation.ANIMATIONTYPE_VECTOR3:
+                      default:
+                        data = _math.Vector3.FromArray(key.values);
+                        break;
+                    }
+                    var keyData = {};
+                    keyData.frame = key.frame;
+                    keyData.value = data;
+                    if (inTangent != undefined) {
+                        keyData.inTangent = inTangent;
+                    }
+                    if (outTangent != undefined) {
+                        keyData.outTangent = outTangent;
+                    }
+                    keys.push(keyData);
+                }
+                animation.setKeys(keys);
+                if (parsedAnimation.ranges) {
+                    for (index = 0; index < parsedAnimation.ranges.length; index++) {
+                        data = parsedAnimation.ranges[index];
+                        animation.createRange(data.name, data.from, data.to);
+                    }
+                }
+                return animation;
+            };
+            Animation.AppendSerializedAnimations = function(source, destination) {
+                _decorators.SerializationHelper.AppendSerializedAnimations(source, destination);
+            };
+            Animation.AllowMatricesInterpolation = false;
+            Animation.AllowMatrixDecomposeForInterpolation = true;
+            Animation._ANIMATIONTYPE_FLOAT = 0;
+            Animation._ANIMATIONTYPE_VECTOR3 = 1;
+            Animation._ANIMATIONTYPE_QUATERNION = 2;
+            Animation._ANIMATIONTYPE_MATRIX = 3;
+            Animation._ANIMATIONTYPE_COLOR3 = 4;
+            Animation._ANIMATIONTYPE_VECTOR2 = 5;
+            Animation._ANIMATIONTYPE_SIZE = 6;
+            Animation._ANIMATIONLOOPMODE_RELATIVE = 0;
+            Animation._ANIMATIONLOOPMODE_CYCLE = 1;
+            Animation._ANIMATIONLOOPMODE_CONSTANT = 2;
+            return Animation;
+        }();
+        exports.Animation = Animation;
+        _typeStore._TypeStore.RegisteredTypes["BABYLON.Animation"] = Animation;
+        _node.Node._AnimationRangeFactory = function(name, from, to) {
+            return new _animationRange.AnimationRange(name, from, to);
+        };
+    }, {
+        "../Maths/math": 13,
+        "../Maths/math.scalar": 14,
+        "../Misc/decorators": 17,
+        "../Misc/typeStore": 22,
+        "../node": 23,
+        "./animationKey": 10,
+        "./animationRange": 11
+    } ],
+    10: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.AnimationKeyInterpolation = void 0;
+        var AnimationKeyInterpolation;
+        exports.AnimationKeyInterpolation = AnimationKeyInterpolation;
+        (function(AnimationKeyInterpolation) {
+            AnimationKeyInterpolation[AnimationKeyInterpolation["STEP"] = 1] = "STEP";
+        })(AnimationKeyInterpolation || (exports.AnimationKeyInterpolation = AnimationKeyInterpolation = {}));
+    }, {} ],
+    11: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.AnimationRange = void 0;
+        var AnimationRange = function() {
+            function AnimationRange(name, from, to) {
+                this.name = name;
+                this.from = from;
+                this.to = to;
+            }
+            AnimationRange.prototype.clone = function() {
+                return new AnimationRange(this.name, this.from, this.to);
+            };
+            return AnimationRange;
+        }();
+        exports.AnimationRange = AnimationRange;
+    }, {} ],
+    12: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.EngineStore = void 0;
+        var EngineStore = function() {
+            function EngineStore() {}
+            Object.defineProperty(EngineStore, "LastCreatedEngine", {
+                get: function() {
+                    if (this.Instances.length === 0) {
+                        return null;
+                    }
+                    return this.Instances[this.Instances.length - 1];
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(EngineStore, "LastCreatedScene", {
+                get: function() {
+                    return this._LastCreatedScene;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            EngineStore.Instances = new Array;
+            EngineStore._LastCreatedScene = null;
+            return EngineStore;
+        }();
+        exports.EngineStore = EngineStore;
+    }, {} ],
+    13: [ function(require, module, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", {
             value: true
@@ -4178,10 +5341,10 @@
             return MathTmp;
         }();
     }, {
-        "../Misc/arrayTools": 10,
-        "./math.scalar": 9
+        "../Misc/arrayTools": 16,
+        "./math.scalar": 14
     } ],
-    9: [ function(require, module, exports) {
+    14: [ function(require, module, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", {
             value: true
@@ -4316,7 +5479,96 @@
         }();
         exports.Scalar = Scalar;
     }, {} ],
-    10: [ function(require, module, exports) {
+    15: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.AndOrNotEvaluator = void 0;
+        var AndOrNotEvaluator = function() {
+            function AndOrNotEvaluator() {}
+            AndOrNotEvaluator.Eval = function(query, evaluateCallback) {
+                if (!query.match(/\([^\(\)]*\)/g)) {
+                    query = AndOrNotEvaluator._HandleParenthesisContent(query, evaluateCallback);
+                } else {
+                    query = query.replace(/\([^\(\)]*\)/g, (function(r) {
+                        r = r.slice(1, r.length - 1);
+                        return AndOrNotEvaluator._HandleParenthesisContent(r, evaluateCallback);
+                    }));
+                }
+                if (query === "true") {
+                    return true;
+                }
+                if (query === "false") {
+                    return false;
+                }
+                return AndOrNotEvaluator.Eval(query, evaluateCallback);
+            };
+            AndOrNotEvaluator._HandleParenthesisContent = function(parenthesisContent, evaluateCallback) {
+                evaluateCallback = evaluateCallback || function(r) {
+                    return r === "true" ? true : false;
+                };
+                var result;
+                var or = parenthesisContent.split("||");
+                for (var i in or) {
+                    if (or.hasOwnProperty(i)) {
+                        var ori = AndOrNotEvaluator._SimplifyNegation(or[i].trim());
+                        var and = ori.split("&&");
+                        if (and.length > 1) {
+                            for (var j = 0; j < and.length; ++j) {
+                                var andj = AndOrNotEvaluator._SimplifyNegation(and[j].trim());
+                                if (andj !== "true" && andj !== "false") {
+                                    if (andj[0] === "!") {
+                                        result = !evaluateCallback(andj.substring(1));
+                                    } else {
+                                        result = evaluateCallback(andj);
+                                    }
+                                } else {
+                                    result = andj === "true" ? true : false;
+                                }
+                                if (!result) {
+                                    ori = "false";
+                                    break;
+                                }
+                            }
+                        }
+                        if (result || ori === "true") {
+                            result = true;
+                            break;
+                        }
+                        if (ori !== "true" && ori !== "false") {
+                            if (ori[0] === "!") {
+                                result = !evaluateCallback(ori.substring(1));
+                            } else {
+                                result = evaluateCallback(ori);
+                            }
+                        } else {
+                            result = ori === "true" ? true : false;
+                        }
+                    }
+                }
+                return result ? "true" : "false";
+            };
+            AndOrNotEvaluator._SimplifyNegation = function(booleanString) {
+                booleanString = booleanString.replace(/^[\s!]+/, (function(r) {
+                    r = r.replace(/[\s]/g, (function() {
+                        return "";
+                    }));
+                    return r.length % 2 ? "!" : "";
+                }));
+                booleanString = booleanString.trim();
+                if (booleanString === "!true") {
+                    booleanString = "false";
+                } else if (booleanString === "!false") {
+                    booleanString = "true";
+                }
+                return booleanString;
+            };
+            return AndOrNotEvaluator;
+        }();
+        exports.AndOrNotEvaluator = AndOrNotEvaluator;
+    }, {} ],
+    16: [ function(require, module, exports) {
         "use strict";
         Object.defineProperty(exports, "__esModule", {
             value: true
@@ -4335,7 +5587,1352 @@
         }();
         exports.ArrayTools = ArrayTools;
     }, {} ],
-    11: [ function(require, module, exports) {
+    17: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.expandToProperty = expandToProperty;
+        exports.serialize = serialize;
+        exports.serializeAsTexture = serializeAsTexture;
+        exports.serializeAsColor3 = serializeAsColor3;
+        exports.serializeAsFresnelParameters = serializeAsFresnelParameters;
+        exports.serializeAsVector2 = serializeAsVector2;
+        exports.serializeAsVector3 = serializeAsVector3;
+        exports.serializeAsMeshReference = serializeAsMeshReference;
+        exports.serializeAsColorCurves = serializeAsColorCurves;
+        exports.serializeAsColor4 = serializeAsColor4;
+        exports.serializeAsImageProcessingConfiguration = serializeAsImageProcessingConfiguration;
+        exports.serializeAsQuaternion = serializeAsQuaternion;
+        exports.serializeAsMatrix = serializeAsMatrix;
+        exports.serializeAsCameraReference = serializeAsCameraReference;
+        exports.SerializationHelper = void 0;
+        var _tags = require("../Misc/tags");
+        var _math = require("../Maths/math");
+        var _devTools = require("./devTools");
+        var __decoratorInitialStore = {};
+        var __mergedStore = {};
+        var _copySource = function(creationFunction, source, instanciate) {
+            var destination = creationFunction();
+            if (_tags.Tags) {
+                _tags.Tags.AddTagsTo(destination, source.tags);
+            }
+            var classStore = getMergedStore(destination);
+            for (var property in classStore) {
+                var propertyDescriptor = classStore[property];
+                var sourceProperty = source[property];
+                var propertyType = propertyDescriptor.type;
+                if (sourceProperty !== undefined && sourceProperty !== null && property !== "uniqueId") {
+                    switch (propertyType) {
+                      case 0:
+                      case 6:
+                      case 11:
+                        destination[property] = sourceProperty;
+                        break;
+
+                      case 1:
+                        destination[property] = instanciate || sourceProperty.isRenderTarget ? sourceProperty : sourceProperty.clone();
+                        break;
+
+                      case 2:
+                      case 3:
+                      case 4:
+                      case 5:
+                      case 7:
+                      case 10:
+                      case 12:
+                        destination[property] = instanciate ? sourceProperty : sourceProperty.clone();
+                        break;
+                    }
+                }
+            }
+            return destination;
+        };
+        function getDirectStore(target) {
+            var classKey = target.getClassName();
+            if (!__decoratorInitialStore[classKey]) {
+                __decoratorInitialStore[classKey] = {};
+            }
+            return __decoratorInitialStore[classKey];
+        }
+        function getMergedStore(target) {
+            var classKey = target.getClassName();
+            if (__mergedStore[classKey]) {
+                return __mergedStore[classKey];
+            }
+            __mergedStore[classKey] = {};
+            var store = __mergedStore[classKey];
+            var currentTarget = target;
+            var currentKey = classKey;
+            while (currentKey) {
+                var initialStore = __decoratorInitialStore[currentKey];
+                for (var property in initialStore) {
+                    store[property] = initialStore[property];
+                }
+                var parent_1 = void 0;
+                var done = false;
+                do {
+                    parent_1 = Object.getPrototypeOf(currentTarget);
+                    if (!parent_1.getClassName) {
+                        done = true;
+                        break;
+                    }
+                    if (parent_1.getClassName() !== currentKey) {
+                        break;
+                    }
+                    currentTarget = parent_1;
+                } while (parent_1);
+                if (done) {
+                    break;
+                }
+                currentKey = parent_1.getClassName();
+                currentTarget = parent_1;
+            }
+            return store;
+        }
+        function generateSerializableMember(type, sourceName) {
+            return function(target, propertyKey) {
+                var classStore = getDirectStore(target);
+                if (!classStore[propertyKey]) {
+                    classStore[propertyKey] = {
+                        type: type,
+                        sourceName: sourceName
+                    };
+                }
+            };
+        }
+        function generateExpandMember(setCallback, targetKey) {
+            if (targetKey === void 0) {
+                targetKey = null;
+            }
+            return function(target, propertyKey) {
+                var key = targetKey || "_" + propertyKey;
+                Object.defineProperty(target, propertyKey, {
+                    get: function() {
+                        return this[key];
+                    },
+                    set: function(value) {
+                        if (this[key] === value) {
+                            return;
+                        }
+                        this[key] = value;
+                        target[setCallback].apply(this);
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
+            };
+        }
+        function expandToProperty(callback, targetKey) {
+            if (targetKey === void 0) {
+                targetKey = null;
+            }
+            return generateExpandMember(callback, targetKey);
+        }
+        function serialize(sourceName) {
+            return generateSerializableMember(0, sourceName);
+        }
+        function serializeAsTexture(sourceName) {
+            return generateSerializableMember(1, sourceName);
+        }
+        function serializeAsColor3(sourceName) {
+            return generateSerializableMember(2, sourceName);
+        }
+        function serializeAsFresnelParameters(sourceName) {
+            return generateSerializableMember(3, sourceName);
+        }
+        function serializeAsVector2(sourceName) {
+            return generateSerializableMember(4, sourceName);
+        }
+        function serializeAsVector3(sourceName) {
+            return generateSerializableMember(5, sourceName);
+        }
+        function serializeAsMeshReference(sourceName) {
+            return generateSerializableMember(6, sourceName);
+        }
+        function serializeAsColorCurves(sourceName) {
+            return generateSerializableMember(7, sourceName);
+        }
+        function serializeAsColor4(sourceName) {
+            return generateSerializableMember(8, sourceName);
+        }
+        function serializeAsImageProcessingConfiguration(sourceName) {
+            return generateSerializableMember(9, sourceName);
+        }
+        function serializeAsQuaternion(sourceName) {
+            return generateSerializableMember(10, sourceName);
+        }
+        function serializeAsMatrix(sourceName) {
+            return generateSerializableMember(12, sourceName);
+        }
+        function serializeAsCameraReference(sourceName) {
+            return generateSerializableMember(11, sourceName);
+        }
+        var SerializationHelper = function() {
+            function SerializationHelper() {}
+            SerializationHelper.AppendSerializedAnimations = function(source, destination) {
+                if (source.animations) {
+                    destination.animations = [];
+                    for (var animationIndex = 0; animationIndex < source.animations.length; animationIndex++) {
+                        var animation = source.animations[animationIndex];
+                        destination.animations.push(animation.serialize());
+                    }
+                }
+            };
+            SerializationHelper.Serialize = function(entity, serializationObject) {
+                if (!serializationObject) {
+                    serializationObject = {};
+                }
+                if (_tags.Tags) {
+                    serializationObject.tags = _tags.Tags.GetTags(entity);
+                }
+                var serializedProperties = getMergedStore(entity);
+                for (var property in serializedProperties) {
+                    var propertyDescriptor = serializedProperties[property];
+                    var targetPropertyName = propertyDescriptor.sourceName || property;
+                    var propertyType = propertyDescriptor.type;
+                    var sourceProperty = entity[property];
+                    if (sourceProperty !== undefined && sourceProperty !== null) {
+                        switch (propertyType) {
+                          case 0:
+                            serializationObject[targetPropertyName] = sourceProperty;
+                            break;
+
+                          case 1:
+                            serializationObject[targetPropertyName] = sourceProperty.serialize();
+                            break;
+
+                          case 2:
+                            serializationObject[targetPropertyName] = sourceProperty.asArray();
+                            break;
+
+                          case 3:
+                            serializationObject[targetPropertyName] = sourceProperty.serialize();
+                            break;
+
+                          case 4:
+                            serializationObject[targetPropertyName] = sourceProperty.asArray();
+                            break;
+
+                          case 5:
+                            serializationObject[targetPropertyName] = sourceProperty.asArray();
+                            break;
+
+                          case 6:
+                            serializationObject[targetPropertyName] = sourceProperty.id;
+                            break;
+
+                          case 7:
+                            serializationObject[targetPropertyName] = sourceProperty.serialize();
+                            break;
+
+                          case 8:
+                            serializationObject[targetPropertyName] = sourceProperty.asArray();
+                            break;
+
+                          case 9:
+                            serializationObject[targetPropertyName] = sourceProperty.serialize();
+                            break;
+
+                          case 10:
+                            serializationObject[targetPropertyName] = sourceProperty.asArray();
+                            break;
+
+                          case 11:
+                            serializationObject[targetPropertyName] = sourceProperty.id;
+
+                          case 12:
+                            serializationObject[targetPropertyName] = sourceProperty.asArray();
+                            break;
+                        }
+                    }
+                }
+                return serializationObject;
+            };
+            SerializationHelper.Parse = function(creationFunction, source, scene, rootUrl) {
+                if (rootUrl === void 0) {
+                    rootUrl = null;
+                }
+                var destination = creationFunction();
+                if (!rootUrl) {
+                    rootUrl = "";
+                }
+                if (_tags.Tags) {
+                    _tags.Tags.AddTagsTo(destination, source.tags);
+                }
+                var classStore = getMergedStore(destination);
+                for (var property in classStore) {
+                    var propertyDescriptor = classStore[property];
+                    var sourceProperty = source[propertyDescriptor.sourceName || property];
+                    var propertyType = propertyDescriptor.type;
+                    if (sourceProperty !== undefined && sourceProperty !== null) {
+                        var dest = destination;
+                        switch (propertyType) {
+                          case 0:
+                            dest[property] = sourceProperty;
+                            break;
+
+                          case 1:
+                            if (scene) {
+                                dest[property] = SerializationHelper._TextureParser(sourceProperty, scene, rootUrl);
+                            }
+                            break;
+
+                          case 2:
+                            dest[property] = _math.Color3.FromArray(sourceProperty);
+                            break;
+
+                          case 3:
+                            dest[property] = SerializationHelper._FresnelParametersParser(sourceProperty);
+                            break;
+
+                          case 4:
+                            dest[property] = _math.Vector2.FromArray(sourceProperty);
+                            break;
+
+                          case 5:
+                            dest[property] = _math.Vector3.FromArray(sourceProperty);
+                            break;
+
+                          case 6:
+                            if (scene) {
+                                dest[property] = scene.getLastMeshByID(sourceProperty);
+                            }
+                            break;
+
+                          case 7:
+                            dest[property] = SerializationHelper._ColorCurvesParser(sourceProperty);
+                            break;
+
+                          case 8:
+                            dest[property] = _math.Color4.FromArray(sourceProperty);
+                            break;
+
+                          case 9:
+                            dest[property] = SerializationHelper._ImageProcessingConfigurationParser(sourceProperty);
+                            break;
+
+                          case 10:
+                            dest[property] = _math.Quaternion.FromArray(sourceProperty);
+                            break;
+
+                          case 11:
+                            if (scene) {
+                                dest[property] = scene.getCameraByID(sourceProperty);
+                            }
+
+                          case 12:
+                            dest[property] = _math.Matrix.FromArray(sourceProperty);
+                            break;
+                        }
+                    }
+                }
+                return destination;
+            };
+            SerializationHelper.Clone = function(creationFunction, source) {
+                return _copySource(creationFunction, source, false);
+            };
+            SerializationHelper.Instanciate = function(creationFunction, source) {
+                return _copySource(creationFunction, source, true);
+            };
+            SerializationHelper._ImageProcessingConfigurationParser = function(sourceProperty) {
+                throw _devTools._DevTools.WarnImport("ImageProcessingConfiguration");
+            };
+            SerializationHelper._FresnelParametersParser = function(sourceProperty) {
+                throw _devTools._DevTools.WarnImport("FresnelParameters");
+            };
+            SerializationHelper._ColorCurvesParser = function(sourceProperty) {
+                throw _devTools._DevTools.WarnImport("ColorCurves");
+            };
+            SerializationHelper._TextureParser = function(sourceProperty, scene, rootUrl) {
+                throw _devTools._DevTools.WarnImport("Texture");
+            };
+            return SerializationHelper;
+        }();
+        exports.SerializationHelper = SerializationHelper;
+    }, {
+        "../Maths/math": 13,
+        "../Misc/tags": 20,
+        "./devTools": 18
+    } ],
+    18: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports._DevTools = void 0;
+        var _DevTools = function() {
+            function _DevTools() {}
+            _DevTools.WarnImport = function(name) {
+                return name + " needs to be imported before as it contains a side-effect required by your code.";
+            };
+            return _DevTools;
+        }();
+        exports._DevTools = _DevTools;
+    }, {} ],
+    19: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.Observable = exports.MultiObserver = exports.Observer = exports.EventState = void 0;
+        var EventState = function() {
+            function EventState(mask, skipNextObservers, target, currentTarget) {
+                if (skipNextObservers === void 0) {
+                    skipNextObservers = false;
+                }
+                this.initalize(mask, skipNextObservers, target, currentTarget);
+            }
+            EventState.prototype.initalize = function(mask, skipNextObservers, target, currentTarget) {
+                if (skipNextObservers === void 0) {
+                    skipNextObservers = false;
+                }
+                this.mask = mask;
+                this.skipNextObservers = skipNextObservers;
+                this.target = target;
+                this.currentTarget = currentTarget;
+                return this;
+            };
+            return EventState;
+        }();
+        exports.EventState = EventState;
+        var Observer = function() {
+            function Observer(callback, mask, scope) {
+                if (scope === void 0) {
+                    scope = null;
+                }
+                this.callback = callback;
+                this.mask = mask;
+                this.scope = scope;
+                this._willBeUnregistered = false;
+                this.unregisterOnNextCall = false;
+            }
+            return Observer;
+        }();
+        exports.Observer = Observer;
+        var MultiObserver = function() {
+            function MultiObserver() {}
+            MultiObserver.prototype.dispose = function() {
+                if (this._observers && this._observables) {
+                    for (var index = 0; index < this._observers.length; index++) {
+                        this._observables[index].remove(this._observers[index]);
+                    }
+                }
+                this._observers = null;
+                this._observables = null;
+            };
+            MultiObserver.Watch = function(observables, callback, mask, scope) {
+                if (mask === void 0) {
+                    mask = -1;
+                }
+                if (scope === void 0) {
+                    scope = null;
+                }
+                var result = new MultiObserver;
+                result._observers = new Array;
+                result._observables = observables;
+                for (var _i = 0, observables_1 = observables; _i < observables_1.length; _i++) {
+                    var observable = observables_1[_i];
+                    var observer = observable.add(callback, mask, false, scope);
+                    if (observer) {
+                        result._observers.push(observer);
+                    }
+                }
+                return result;
+            };
+            return MultiObserver;
+        }();
+        exports.MultiObserver = MultiObserver;
+        var Observable = function() {
+            function Observable(onObserverAdded) {
+                this._observers = new Array;
+                this._eventState = new EventState(0);
+                if (onObserverAdded) {
+                    this._onObserverAdded = onObserverAdded;
+                }
+            }
+            Observable.prototype.add = function(callback, mask, insertFirst, scope, unregisterOnFirstCall) {
+                if (mask === void 0) {
+                    mask = -1;
+                }
+                if (insertFirst === void 0) {
+                    insertFirst = false;
+                }
+                if (scope === void 0) {
+                    scope = null;
+                }
+                if (unregisterOnFirstCall === void 0) {
+                    unregisterOnFirstCall = false;
+                }
+                if (!callback) {
+                    return null;
+                }
+                var observer = new Observer(callback, mask, scope);
+                observer.unregisterOnNextCall = unregisterOnFirstCall;
+                if (insertFirst) {
+                    this._observers.unshift(observer);
+                } else {
+                    this._observers.push(observer);
+                }
+                if (this._onObserverAdded) {
+                    this._onObserverAdded(observer);
+                }
+                return observer;
+            };
+            Observable.prototype.addOnce = function(callback) {
+                return this.add(callback, undefined, undefined, undefined, true);
+            };
+            Observable.prototype.remove = function(observer) {
+                if (!observer) {
+                    return false;
+                }
+                var index = this._observers.indexOf(observer);
+                if (index !== -1) {
+                    this._deferUnregister(observer);
+                    return true;
+                }
+                return false;
+            };
+            Observable.prototype.removeCallback = function(callback, scope) {
+                for (var index = 0; index < this._observers.length; index++) {
+                    if (this._observers[index].callback === callback && (!scope || scope === this._observers[index].scope)) {
+                        this._deferUnregister(this._observers[index]);
+                        return true;
+                    }
+                }
+                return false;
+            };
+            Observable.prototype._deferUnregister = function(observer) {
+                var _this = this;
+                observer.unregisterOnNextCall = false;
+                observer._willBeUnregistered = true;
+                setTimeout((function() {
+                    _this._remove(observer);
+                }), 0);
+            };
+            Observable.prototype._remove = function(observer) {
+                if (!observer) {
+                    return false;
+                }
+                var index = this._observers.indexOf(observer);
+                if (index !== -1) {
+                    this._observers.splice(index, 1);
+                    return true;
+                }
+                return false;
+            };
+            Observable.prototype.makeObserverTopPriority = function(observer) {
+                this._remove(observer);
+                this._observers.unshift(observer);
+            };
+            Observable.prototype.makeObserverBottomPriority = function(observer) {
+                this._remove(observer);
+                this._observers.push(observer);
+            };
+            Observable.prototype.notifyObservers = function(eventData, mask, target, currentTarget) {
+                if (mask === void 0) {
+                    mask = -1;
+                }
+                if (!this._observers.length) {
+                    return true;
+                }
+                var state = this._eventState;
+                state.mask = mask;
+                state.target = target;
+                state.currentTarget = currentTarget;
+                state.skipNextObservers = false;
+                state.lastReturnValue = eventData;
+                for (var _i = 0, _a = this._observers; _i < _a.length; _i++) {
+                    var obs = _a[_i];
+                    if (obs._willBeUnregistered) {
+                        continue;
+                    }
+                    if (obs.mask & mask) {
+                        if (obs.scope) {
+                            state.lastReturnValue = obs.callback.apply(obs.scope, [ eventData, state ]);
+                        } else {
+                            state.lastReturnValue = obs.callback(eventData, state);
+                        }
+                        if (obs.unregisterOnNextCall) {
+                            this._deferUnregister(obs);
+                        }
+                    }
+                    if (state.skipNextObservers) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+            Observable.prototype.notifyObserversWithPromise = function(eventData, mask, target, currentTarget) {
+                var _this = this;
+                if (mask === void 0) {
+                    mask = -1;
+                }
+                var p = Promise.resolve(eventData);
+                if (!this._observers.length) {
+                    return p;
+                }
+                var state = this._eventState;
+                state.mask = mask;
+                state.target = target;
+                state.currentTarget = currentTarget;
+                state.skipNextObservers = false;
+                this._observers.forEach((function(obs) {
+                    if (state.skipNextObservers) {
+                        return;
+                    }
+                    if (obs._willBeUnregistered) {
+                        return;
+                    }
+                    if (obs.mask & mask) {
+                        if (obs.scope) {
+                            p = p.then((function(lastReturnedValue) {
+                                state.lastReturnValue = lastReturnedValue;
+                                return obs.callback.apply(obs.scope, [ eventData, state ]);
+                            }));
+                        } else {
+                            p = p.then((function(lastReturnedValue) {
+                                state.lastReturnValue = lastReturnedValue;
+                                return obs.callback(eventData, state);
+                            }));
+                        }
+                        if (obs.unregisterOnNextCall) {
+                            _this._deferUnregister(obs);
+                        }
+                    }
+                }));
+                return p.then((function() {
+                    return eventData;
+                }));
+            };
+            Observable.prototype.notifyObserver = function(observer, eventData, mask) {
+                if (mask === void 0) {
+                    mask = -1;
+                }
+                var state = this._eventState;
+                state.mask = mask;
+                state.skipNextObservers = false;
+                observer.callback(eventData, state);
+            };
+            Observable.prototype.hasObservers = function() {
+                return this._observers.length > 0;
+            };
+            Observable.prototype.clear = function() {
+                this._observers = new Array;
+                this._onObserverAdded = null;
+            };
+            Observable.prototype.clone = function() {
+                var result = new Observable;
+                result._observers = this._observers.slice(0);
+                return result;
+            };
+            Observable.prototype.hasSpecificMask = function(mask) {
+                if (mask === void 0) {
+                    mask = -1;
+                }
+                for (var _i = 0, _a = this._observers; _i < _a.length; _i++) {
+                    var obs = _a[_i];
+                    if (obs.mask & mask || obs.mask === mask) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+            return Observable;
+        }();
+        exports.Observable = Observable;
+    }, {} ],
+    20: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.Tags = void 0;
+        var _tools = require("./tools");
+        var _andOrNotEvaluator = require("./andOrNotEvaluator");
+        var Tags = function() {
+            function Tags() {}
+            Tags.EnableFor = function(obj) {
+                obj._tags = obj._tags || {};
+                obj.hasTags = function() {
+                    return Tags.HasTags(obj);
+                };
+                obj.addTags = function(tagsString) {
+                    return Tags.AddTagsTo(obj, tagsString);
+                };
+                obj.removeTags = function(tagsString) {
+                    return Tags.RemoveTagsFrom(obj, tagsString);
+                };
+                obj.matchesTagsQuery = function(tagsQuery) {
+                    return Tags.MatchesQuery(obj, tagsQuery);
+                };
+            };
+            Tags.DisableFor = function(obj) {
+                delete obj._tags;
+                delete obj.hasTags;
+                delete obj.addTags;
+                delete obj.removeTags;
+                delete obj.matchesTagsQuery;
+            };
+            Tags.HasTags = function(obj) {
+                if (!obj._tags) {
+                    return false;
+                }
+                return !_tools.Tools.IsEmpty(obj._tags);
+            };
+            Tags.GetTags = function(obj, asString) {
+                if (asString === void 0) {
+                    asString = true;
+                }
+                if (!obj._tags) {
+                    return null;
+                }
+                if (asString) {
+                    var tagsArray = [];
+                    for (var tag in obj._tags) {
+                        if (obj._tags.hasOwnProperty(tag) && obj._tags[tag] === true) {
+                            tagsArray.push(tag);
+                        }
+                    }
+                    return tagsArray.join(" ");
+                } else {
+                    return obj._tags;
+                }
+            };
+            Tags.AddTagsTo = function(obj, tagsString) {
+                if (!tagsString) {
+                    return;
+                }
+                if (typeof tagsString !== "string") {
+                    return;
+                }
+                var tags = tagsString.split(" ");
+                tags.forEach((function(tag, index, array) {
+                    Tags._AddTagTo(obj, tag);
+                }));
+            };
+            Tags._AddTagTo = function(obj, tag) {
+                tag = tag.trim();
+                if (tag === "" || tag === "true" || tag === "false") {
+                    return;
+                }
+                if (tag.match(/[\s]/) || tag.match(/^([!]|([|]|[&]){2})/)) {
+                    return;
+                }
+                Tags.EnableFor(obj);
+                obj._tags[tag] = true;
+            };
+            Tags.RemoveTagsFrom = function(obj, tagsString) {
+                if (!Tags.HasTags(obj)) {
+                    return;
+                }
+                var tags = tagsString.split(" ");
+                for (var t in tags) {
+                    Tags._RemoveTagFrom(obj, tags[t]);
+                }
+            };
+            Tags._RemoveTagFrom = function(obj, tag) {
+                delete obj._tags[tag];
+            };
+            Tags.MatchesQuery = function(obj, tagsQuery) {
+                if (tagsQuery === undefined) {
+                    return true;
+                }
+                if (tagsQuery === "") {
+                    return Tags.HasTags(obj);
+                }
+                return _andOrNotEvaluator.AndOrNotEvaluator.Eval(tagsQuery, (function(r) {
+                    return Tags.HasTags(obj) && obj._tags[r];
+                }));
+            };
+            return Tags;
+        }();
+        exports.Tags = Tags;
+    }, {
+        "./andOrNotEvaluator": 15,
+        "./tools": 21
+    } ],
+    21: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+    }, {} ],
+    22: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports._TypeStore = void 0;
+        var _TypeStore = function() {
+            function _TypeStore() {}
+            _TypeStore.GetClass = function(fqdn) {
+                if (this.RegisteredTypes && this.RegisteredTypes[fqdn]) {
+                    return this.RegisteredTypes[fqdn];
+                }
+                return null;
+            };
+            _TypeStore.RegisteredTypes = {};
+            return _TypeStore;
+        }();
+        exports._TypeStore = _TypeStore;
+    }, {} ],
+    23: [ function(require, module, exports) {
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.Node = void 0;
+        var tslib_1 = _interopRequireWildcard(require("tslib"));
+        var _math = require("./Maths/math");
+        var _decorators = require("./Misc/decorators");
+        var _observable = require("./Misc/observable");
+        var _engineStore = require("./Engines/engineStore");
+        var _devTools = require("./Misc/devTools");
+        var _tools = require("./Misc/tools");
+        function _getRequireWildcardCache() {
+            if (typeof WeakMap !== "function") return null;
+            var cache = new WeakMap;
+            _getRequireWildcardCache = function() {
+                return cache;
+            };
+            return cache;
+        }
+        function _interopRequireWildcard(obj) {
+            if (obj && obj.__esModule) {
+                return obj;
+            }
+            var cache = _getRequireWildcardCache();
+            if (cache && cache.has(obj)) {
+                return cache.get(obj);
+            }
+            var newObj = {};
+            if (obj != null) {
+                var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor;
+                for (var key in obj) {
+                    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                        var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null;
+                        if (desc && (desc.get || desc.set)) {
+                            Object.defineProperty(newObj, key, desc);
+                        } else {
+                            newObj[key] = obj[key];
+                        }
+                    }
+                }
+            }
+            newObj.default = obj;
+            if (cache) {
+                cache.set(obj, newObj);
+            }
+            return newObj;
+        }
+        var Node = function() {
+            function Node(name, scene, addToRootNodes) {
+                if (scene === void 0) {
+                    scene = null;
+                }
+                if (addToRootNodes === void 0) {
+                    addToRootNodes = true;
+                }
+                this.state = "";
+                this.metadata = null;
+                this.reservedDataStore = null;
+                this.doNotSerialize = false;
+                this._isDisposed = false;
+                this.animations = new Array;
+                this._ranges = {};
+                this.onReady = null;
+                this._isEnabled = true;
+                this._isParentEnabled = true;
+                this._isReady = true;
+                this._currentRenderId = -1;
+                this._parentUpdateId = -1;
+                this._childUpdateId = -1;
+                this._waitingParentId = null;
+                this._cache = {};
+                this._parentNode = null;
+                this._children = null;
+                this._worldMatrix = _math.Matrix.Identity();
+                this._worldMatrixDeterminant = 0;
+                this._worldMatrixDeterminantIsDirty = true;
+                this._sceneRootNodesIndex = -1;
+                this._animationPropertiesOverride = null;
+                this._isNode = true;
+                this.onDisposeObservable = new _observable.Observable;
+                this._onDisposeObserver = null;
+                this._behaviors = new Array;
+                this.name = name;
+                this.id = name;
+                this._scene = scene || _engineStore.EngineStore.LastCreatedScene;
+                this.uniqueId = this._scene.getUniqueId();
+                this._initCache();
+                if (addToRootNodes) {
+                    this.addToSceneRootNodes();
+                }
+            }
+            Node.AddNodeConstructor = function(type, constructorFunc) {
+                this._NodeConstructors[type] = constructorFunc;
+            };
+            Node.Construct = function(type, name, scene, options) {
+                var constructorFunc = this._NodeConstructors[type];
+                if (!constructorFunc) {
+                    return null;
+                }
+                return constructorFunc(name, scene, options);
+            };
+            Node.prototype.isDisposed = function() {
+                return this._isDisposed;
+            };
+            Object.defineProperty(Node.prototype, "parent", {
+                get: function() {
+                    return this._parentNode;
+                },
+                set: function(parent) {
+                    if (this._parentNode === parent) {
+                        return;
+                    }
+                    var previousParentNode = this._parentNode;
+                    if (this._parentNode && this._parentNode._children !== undefined && this._parentNode._children !== null) {
+                        var index = this._parentNode._children.indexOf(this);
+                        if (index !== -1) {
+                            this._parentNode._children.splice(index, 1);
+                        }
+                        if (!parent && !this._isDisposed) {
+                            this.addToSceneRootNodes();
+                        }
+                    }
+                    this._parentNode = parent;
+                    if (this._parentNode) {
+                        if (this._parentNode._children === undefined || this._parentNode._children === null) {
+                            this._parentNode._children = new Array;
+                        }
+                        this._parentNode._children.push(this);
+                        if (!previousParentNode) {
+                            this.removeFromSceneRootNodes();
+                        }
+                    }
+                    this._syncParentEnabledState();
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Node.prototype.addToSceneRootNodes = function() {
+                if (this._sceneRootNodesIndex === -1) {
+                    this._sceneRootNodesIndex = this._scene.rootNodes.length;
+                    this._scene.rootNodes.push(this);
+                }
+            };
+            Node.prototype.removeFromSceneRootNodes = function() {
+                if (this._sceneRootNodesIndex !== -1) {
+                    var rootNodes = this._scene.rootNodes;
+                    var lastIdx = rootNodes.length - 1;
+                    rootNodes[this._sceneRootNodesIndex] = rootNodes[lastIdx];
+                    rootNodes[this._sceneRootNodesIndex]._sceneRootNodesIndex = this._sceneRootNodesIndex;
+                    this._scene.rootNodes.pop();
+                    this._sceneRootNodesIndex = -1;
+                }
+            };
+            Object.defineProperty(Node.prototype, "animationPropertiesOverride", {
+                get: function() {
+                    if (!this._animationPropertiesOverride) {
+                        return this._scene.animationPropertiesOverride;
+                    }
+                    return this._animationPropertiesOverride;
+                },
+                set: function(value) {
+                    this._animationPropertiesOverride = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Node.prototype.getClassName = function() {
+                return "Node";
+            };
+            Object.defineProperty(Node.prototype, "onDispose", {
+                set: function(callback) {
+                    if (this._onDisposeObserver) {
+                        this.onDisposeObservable.remove(this._onDisposeObserver);
+                    }
+                    this._onDisposeObserver = this.onDisposeObservable.add(callback);
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Node.prototype.getScene = function() {
+                return this._scene;
+            };
+            Node.prototype.getEngine = function() {
+                return this._scene.getEngine();
+            };
+            Node.prototype.addBehavior = function(behavior, attachImmediately) {
+                var _this = this;
+                if (attachImmediately === void 0) {
+                    attachImmediately = false;
+                }
+                var index = this._behaviors.indexOf(behavior);
+                if (index !== -1) {
+                    return this;
+                }
+                behavior.init();
+                if (this._scene.isLoading && !attachImmediately) {
+                    this._scene.onDataLoadedObservable.addOnce((function() {
+                        behavior.attach(_this);
+                    }));
+                } else {
+                    behavior.attach(this);
+                }
+                this._behaviors.push(behavior);
+                return this;
+            };
+            Node.prototype.removeBehavior = function(behavior) {
+                var index = this._behaviors.indexOf(behavior);
+                if (index === -1) {
+                    return this;
+                }
+                this._behaviors[index].detach();
+                this._behaviors.splice(index, 1);
+                return this;
+            };
+            Object.defineProperty(Node.prototype, "behaviors", {
+                get: function() {
+                    return this._behaviors;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Node.prototype.getBehaviorByName = function(name) {
+                for (var _i = 0, _a = this._behaviors; _i < _a.length; _i++) {
+                    var behavior = _a[_i];
+                    if (behavior.name === name) {
+                        return behavior;
+                    }
+                }
+                return null;
+            };
+            Node.prototype.getWorldMatrix = function() {
+                if (this._currentRenderId !== this._scene.getRenderId()) {
+                    this.computeWorldMatrix();
+                }
+                return this._worldMatrix;
+            };
+            Node.prototype._getWorldMatrixDeterminant = function() {
+                if (this._worldMatrixDeterminantIsDirty) {
+                    this._worldMatrixDeterminantIsDirty = false;
+                    this._worldMatrixDeterminant = this._worldMatrix.determinant();
+                }
+                return this._worldMatrixDeterminant;
+            };
+            Object.defineProperty(Node.prototype, "worldMatrixFromCache", {
+                get: function() {
+                    return this._worldMatrix;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Node.prototype._initCache = function() {
+                this._cache = {};
+                this._cache.parent = undefined;
+            };
+            Node.prototype.updateCache = function(force) {
+                if (!force && this.isSynchronized()) {
+                    return;
+                }
+                this._cache.parent = this.parent;
+                this._updateCache();
+            };
+            Node.prototype._getActionManagerForTrigger = function(trigger, initialCall) {
+                if (initialCall === void 0) {
+                    initialCall = true;
+                }
+                if (!this.parent) {
+                    return null;
+                }
+                return this.parent._getActionManagerForTrigger(trigger, false);
+            };
+            Node.prototype._updateCache = function(ignoreParentClass) {};
+            Node.prototype._isSynchronized = function() {
+                return true;
+            };
+            Node.prototype._markSyncedWithParent = function() {
+                if (this._parentNode) {
+                    this._parentUpdateId = this._parentNode._childUpdateId;
+                }
+            };
+            Node.prototype.isSynchronizedWithParent = function() {
+                if (!this._parentNode) {
+                    return true;
+                }
+                if (this._parentUpdateId !== this._parentNode._childUpdateId) {
+                    return false;
+                }
+                return this._parentNode.isSynchronized();
+            };
+            Node.prototype.isSynchronized = function() {
+                if (this._cache.parent != this._parentNode) {
+                    this._cache.parent = this._parentNode;
+                    return false;
+                }
+                if (this._parentNode && !this.isSynchronizedWithParent()) {
+                    return false;
+                }
+                return this._isSynchronized();
+            };
+            Node.prototype.isReady = function(completeCheck) {
+                if (completeCheck === void 0) {
+                    completeCheck = false;
+                }
+                return this._isReady;
+            };
+            Node.prototype.isEnabled = function(checkAncestors) {
+                if (checkAncestors === void 0) {
+                    checkAncestors = true;
+                }
+                if (checkAncestors === false) {
+                    return this._isEnabled;
+                }
+                if (!this._isEnabled) {
+                    return false;
+                }
+                return this._isParentEnabled;
+            };
+            Node.prototype._syncParentEnabledState = function() {
+                this._isParentEnabled = this._parentNode ? this._parentNode.isEnabled() : true;
+                if (this._children) {
+                    this._children.forEach((function(c) {
+                        c._syncParentEnabledState();
+                    }));
+                }
+            };
+            Node.prototype.setEnabled = function(value) {
+                this._isEnabled = value;
+                this._syncParentEnabledState();
+            };
+            Node.prototype.isDescendantOf = function(ancestor) {
+                if (this.parent) {
+                    if (this.parent === ancestor) {
+                        return true;
+                    }
+                    return this.parent.isDescendantOf(ancestor);
+                }
+                return false;
+            };
+            Node.prototype._getDescendants = function(results, directDescendantsOnly, predicate) {
+                if (directDescendantsOnly === void 0) {
+                    directDescendantsOnly = false;
+                }
+                if (!this._children) {
+                    return;
+                }
+                for (var index = 0; index < this._children.length; index++) {
+                    var item = this._children[index];
+                    if (!predicate || predicate(item)) {
+                        results.push(item);
+                    }
+                    if (!directDescendantsOnly) {
+                        item._getDescendants(results, false, predicate);
+                    }
+                }
+            };
+            Node.prototype.getDescendants = function(directDescendantsOnly, predicate) {
+                var results = new Array;
+                this._getDescendants(results, directDescendantsOnly, predicate);
+                return results;
+            };
+            Node.prototype.getChildMeshes = function(directDescendantsOnly, predicate) {
+                var results = [];
+                this._getDescendants(results, directDescendantsOnly, (function(node) {
+                    return (!predicate || predicate(node)) && node.cullingStrategy !== undefined;
+                }));
+                return results;
+            };
+            Node.prototype.getChildren = function(predicate, directDescendantsOnly) {
+                if (directDescendantsOnly === void 0) {
+                    directDescendantsOnly = true;
+                }
+                return this.getDescendants(directDescendantsOnly, predicate);
+            };
+            Node.prototype._setReady = function(state) {
+                if (state === this._isReady) {
+                    return;
+                }
+                if (!state) {
+                    this._isReady = false;
+                    return;
+                }
+                if (this.onReady) {
+                    this.onReady(this);
+                }
+                this._isReady = true;
+            };
+            Node.prototype.getAnimationByName = function(name) {
+                for (var i = 0; i < this.animations.length; i++) {
+                    var animation = this.animations[i];
+                    if (animation.name === name) {
+                        return animation;
+                    }
+                }
+                return null;
+            };
+            Node.prototype.createAnimationRange = function(name, from, to) {
+                if (!this._ranges[name]) {
+                    this._ranges[name] = Node._AnimationRangeFactory(name, from, to);
+                    for (var i = 0, nAnimations = this.animations.length; i < nAnimations; i++) {
+                        if (this.animations[i]) {
+                            this.animations[i].createRange(name, from, to);
+                        }
+                    }
+                }
+            };
+            Node.prototype.deleteAnimationRange = function(name, deleteFrames) {
+                if (deleteFrames === void 0) {
+                    deleteFrames = true;
+                }
+                for (var i = 0, nAnimations = this.animations.length; i < nAnimations; i++) {
+                    if (this.animations[i]) {
+                        this.animations[i].deleteRange(name, deleteFrames);
+                    }
+                }
+                this._ranges[name] = null;
+            };
+            Node.prototype.getAnimationRange = function(name) {
+                return this._ranges[name];
+            };
+            Node.prototype.getAnimationRanges = function() {
+                var animationRanges = [];
+                var name;
+                for (name in this._ranges) {
+                    animationRanges.push(this._ranges[name]);
+                }
+                return animationRanges;
+            };
+            Node.prototype.beginAnimation = function(name, loop, speedRatio, onAnimationEnd) {
+                var range = this.getAnimationRange(name);
+                if (!range) {
+                    return null;
+                }
+                return this._scene.beginAnimation(this, range.from, range.to, loop, speedRatio, onAnimationEnd);
+            };
+            Node.prototype.serializeAnimationRanges = function() {
+                var serializationRanges = [];
+                for (var name in this._ranges) {
+                    var localRange = this._ranges[name];
+                    if (!localRange) {
+                        continue;
+                    }
+                    var range = {};
+                    range.name = name;
+                    range.from = localRange.from;
+                    range.to = localRange.to;
+                    serializationRanges.push(range);
+                }
+                return serializationRanges;
+            };
+            Node.prototype.computeWorldMatrix = function(force) {
+                if (!this._worldMatrix) {
+                    this._worldMatrix = _math.Matrix.Identity();
+                }
+                return this._worldMatrix;
+            };
+            Node.prototype.dispose = function(doNotRecurse, disposeMaterialAndTextures) {
+                if (disposeMaterialAndTextures === void 0) {
+                    disposeMaterialAndTextures = false;
+                }
+                this._isDisposed = true;
+                if (!doNotRecurse) {
+                    var nodes = this.getDescendants(true);
+                    for (var _i = 0, nodes_1 = nodes; _i < nodes_1.length; _i++) {
+                        var node = nodes_1[_i];
+                        node.dispose(doNotRecurse, disposeMaterialAndTextures);
+                    }
+                }
+                if (!this.parent) {
+                    this.removeFromSceneRootNodes();
+                } else {
+                    this.parent = null;
+                }
+                this.onDisposeObservable.notifyObservers(this);
+                this.onDisposeObservable.clear();
+                for (var _a = 0, _b = this._behaviors; _a < _b.length; _a++) {
+                    var behavior = _b[_a];
+                    behavior.detach();
+                }
+                this._behaviors = [];
+            };
+            Node.ParseAnimationRanges = function(node, parsedNode, scene) {
+                if (parsedNode.ranges) {
+                    for (var index = 0; index < parsedNode.ranges.length; index++) {
+                        var data = parsedNode.ranges[index];
+                        node.createAnimationRange(data.name, data.from, data.to);
+                    }
+                }
+            };
+            Node.prototype.getHierarchyBoundingVectors = function(includeDescendants, predicate) {
+                if (includeDescendants === void 0) {
+                    includeDescendants = true;
+                }
+                if (predicate === void 0) {
+                    predicate = null;
+                }
+                this.getScene().incrementRenderId();
+                this.computeWorldMatrix(true);
+                var min;
+                var max;
+                var thisAbstractMesh = this;
+                if (thisAbstractMesh.getBoundingInfo && thisAbstractMesh.subMeshes) {
+                    var boundingInfo = thisAbstractMesh.getBoundingInfo();
+                    min = boundingInfo.boundingBox.minimumWorld;
+                    max = boundingInfo.boundingBox.maximumWorld;
+                } else {
+                    min = new _math.Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+                    max = new _math.Vector3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
+                }
+                if (includeDescendants) {
+                    var descendants = this.getDescendants(false);
+                    for (var _i = 0, descendants_1 = descendants; _i < descendants_1.length; _i++) {
+                        var descendant = descendants_1[_i];
+                        var childMesh = descendant;
+                        childMesh.computeWorldMatrix(true);
+                        if (predicate && !predicate(childMesh)) {
+                            continue;
+                        }
+                        if (!childMesh.getBoundingInfo || childMesh.getTotalVertices() === 0) {
+                            continue;
+                        }
+                        var childBoundingInfo = childMesh.getBoundingInfo();
+                        var boundingBox = childBoundingInfo.boundingBox;
+                        var minBox = boundingBox.minimumWorld;
+                        var maxBox = boundingBox.maximumWorld;
+                        _tools.Tools.CheckExtends(minBox, min, max);
+                        _tools.Tools.CheckExtends(maxBox, min, max);
+                    }
+                }
+                return {
+                    min: min,
+                    max: max
+                };
+            };
+            Node._AnimationRangeFactory = function(name, from, to) {
+                throw _devTools._DevTools.WarnImport("AnimationRange");
+            };
+            Node._NodeConstructors = {};
+            tslib_1.__decorate([ (0, _decorators.serialize)() ], Node.prototype, "name", void 0);
+            tslib_1.__decorate([ (0, _decorators.serialize)() ], Node.prototype, "id", void 0);
+            tslib_1.__decorate([ (0, _decorators.serialize)() ], Node.prototype, "uniqueId", void 0);
+            tslib_1.__decorate([ (0, _decorators.serialize)() ], Node.prototype, "state", void 0);
+            tslib_1.__decorate([ (0, _decorators.serialize)() ], Node.prototype, "metadata", void 0);
+            return Node;
+        }();
+        exports.Node = Node;
+    }, {
+        "./Engines/engineStore": 12,
+        "./Maths/math": 13,
+        "./Misc/decorators": 17,
+        "./Misc/devTools": 18,
+        "./Misc/observable": 19,
+        "./Misc/tools": 21,
+        tslib: 4
+    } ],
+    24: [ function(require, module, exports) {
         "use strict";
         const Blocks = (index, transparent, color) => index + (transparent ? 0 : 1 << 15) + (color << 6);
         Blocks.empty = 0;
@@ -4366,7 +6963,7 @@
             VoxelField: VoxelField
         };
     }, {} ],
-    12: [ function(require, module, exports) {
+    25: [ function(require, module, exports) {
         var objectCreate = Object.create || objectCreatePolyfill;
         var objectKeys = Object.keys || objectKeysPolyfill;
         var bind = Function.prototype.bind || functionBindPolyfill;

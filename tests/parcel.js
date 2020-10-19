@@ -45,6 +45,7 @@ test('onMessage', t => {
 
 test('createFeature / removeFeature', t => {
   const p = new Parcel(2)
+  p.broadcast = () => {}
   p.parse(json)
 
   t.equal(9, p.getFeatures().length)

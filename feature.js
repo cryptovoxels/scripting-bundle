@@ -84,11 +84,11 @@ class Feature extends EventEmitter {
   }
 
   clone () {
-    let d = JSON.parse(JSON.stringify(this.description))
+    const d = JSON.parse(JSON.stringify(this.description))
     delete d.id
     delete d.uuid
 
-    let c = this.parcel.createFeature(this.type)
+    const c = this.parcel.createFeature(this.type)
     c.set(d)
 
     return c
@@ -137,6 +137,20 @@ class Audio extends Feature {
       uuid: this.uuid
     })
   }
+
+  pause () {
+    this.parcel.broadcast({
+      type: 'pause',
+      uuid: this.uuid
+    })
+  }
+
+  stop () {
+    this.parcel.broadcast({
+      type: 'stop',
+      uuid: this.uuid
+    })
+  }
 }
 
 class TextInput extends Feature {
@@ -153,6 +167,43 @@ class Video extends Feature {
   play () {
     this.parcel.broadcast({
       type: 'play',
+      uuid: this.uuid
+    })
+  }
+
+  pause () {
+    this.parcel.broadcast({
+      type: 'pause',
+      uuid: this.uuid
+    })
+  }
+
+  stop () {
+    this.parcel.broadcast({
+      type: 'stop',
+      uuid: this.uuid
+    })
+  }
+}
+
+class Youtube extends Feature {
+  play () {
+    this.parcel.broadcast({
+      type: 'play',
+      uuid: this.uuid
+    })
+  }
+
+  pause () {
+    this.parcel.broadcast({
+      type: 'pause',
+      uuid: this.uuid
+    })
+  }
+
+  stop () {
+    this.parcel.broadcast({
+      type: 'stop',
       uuid: this.uuid
     })
   }
@@ -192,6 +243,8 @@ Feature.create = (parcel, obj) => {
     return new Audio(parcel, obj)
   } else if (obj.type === 'video') {
     return new Video(parcel, obj)
+  } else if (obj.type === 'youtube') {
+    return new Youtube(parcel, obj)
   } else if (obj.type === 'vid-screen') {
     return new VidScreen(parcel, obj)
   } else if (obj.type === 'text-input') {
