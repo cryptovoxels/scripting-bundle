@@ -90,7 +90,7 @@ class Parcel extends EventEmitter {
       this.players.splice(i)
     }
 
-    this.emit('playerleave', player)
+    this.emit('playerleave', { player })
   }
 
   broadcast (message) {
