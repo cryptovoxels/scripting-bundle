@@ -80,7 +80,7 @@ class Parcel extends EventEmitter {
 
   join (player) {
     this.players.push(player)
-    this.emit('playerenter', player)
+    this.emit('playerenter', { player })
   }
 
   leave (player) {
