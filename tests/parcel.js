@@ -2,19 +2,6 @@ const test = require('tape')
 const { Parcel } = require('../index')
 const json = require('./parcel.json').parcel
 
-/*
-test('fetch', async (t) => {
-  let p = new Parcel(2)
-
-  p.parse = () => {
-    t.ok(true)
-    t.end()
-  }
-
-  await p.fetch()
-})
-*/
-
 test('parse', (t) => {
   const p = new Parcel(2)
   p.parse(json)
@@ -57,5 +44,55 @@ test('createFeature / removeFeature', t => {
   t.equal(9, p.getFeatures().length)
   t.equal(-1, p.getFeatures().indexOf(f))
 
+  t.end()
+})
+
+test('getFeatureByUuid', t => {
+  const p = new Parcel(2)
+  p.broadcast = () => {}
+  p.parse(json)
+  t.ok(p.getFeatureByUuid('8f4e097d-d560-409c-a3b5-4638f1897469'))
+  t.notOk(p.getFeatureByUuid('boopboop'))
+  t.end()
+})
+
+test('getFeatureById', t => {
+  const p = new Parcel(2)
+  p.broadcast = () => {}
+  p.parse(json)
+  t.ok(p.getFeatureById('boompity'))
+  t.notOk(p.getFeatureById('zingzong'))
+  t.end()
+})
+
+test('getFeatures', t => {
+  const p = new Parcel(2)
+  p.broadcast = () => {}
+  t.equal(0, p.getFeatures().length)
+  p.parse(json)
+  t.equal(9, p.getFeatures().length)
+  t.end()
+})
+
+test('getFeaturesByType', t => {
+  const p = new Parcel(2)
+  p.broadcast = () => {}
+  p.parse(json)
+  t.equal(3, p.getFeaturesByType('image').length)
+  t.end()
+})
+
+test('getPlayers', t => {
+  const p = new Parcel(2)
+  p.broadcast = () => {}
+  t.equal(0, p.getPlayers.length)
+  t.end()
+})
+
+test('createFeature', t => {
+  const p = new Parcel(2)
+  p.broadcast = () => {}
+  p.createFeature('image', {})
+  t.equal(1, p.getFeatures().length)
   t.end()
 })

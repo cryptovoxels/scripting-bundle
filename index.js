@@ -19,7 +19,7 @@ class Parcel extends EventEmitter {
     this.id = id
 
     this.players = []
-    this.featureList = []
+    this.featuresList = []
   }
 
   listen (port) {
