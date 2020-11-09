@@ -96,3 +96,20 @@ test('createFeature', t => {
   t.equal(1, p.getFeatures().length)
   t.end()
 })
+
+test('removeFeature', t => {
+  const p = new Parcel(2)
+  p.broadcast = () => {}
+  p.parse(json)
+
+  let f = p.getFeatureByUuid('88c9d244-674f-40cd-99e2-537f4d1dc89d')
+  t.equal(9, p.getFeatures().length)
+
+  p.removeFeature(f)
+  t.equal(8, p.getFeatures().length)
+
+  p.removeFeature(f)
+  t.equal(8, p.getFeatures().length)
+
+  t.end()
+})

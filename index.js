@@ -178,11 +178,12 @@ class Parcel extends EventEmitter {
       uuid: f.uuid
     })
 
-    const i = this.featuresList.indexOf(f)
+    this.featuresList = this.featuresList.filter(p => p.uuid !== f.uuid)
+    // const i = this.featuresList.indexOf(f)
 
-    if (i > -1) {
-      this.featuresList.splice(i)
-    }
+    // if (i > -1) {
+    //   this.featuresList.splice(i)
+    // }
   }
 
   start () {
