@@ -1,9 +1,10 @@
 {
+  "sourceType":"module",
   "presets": [
     [
       "@babel/preset-env",
       {
-        "targets": { "chrome": 80 }
+        "targets": { "chrome": 80}
       }
     ]
   ]

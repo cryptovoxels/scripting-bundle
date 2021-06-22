@@ -6,8 +6,8 @@ import {
   Vector2,
   Color3,
   Matrix,
-} from "./vendor/babylonjs/Maths/math";
-import { Animation } from "./vendor/babylonjs/Animations/animation";
+} from "@babylonjs/core/Maths/math";
+import { Animation } from "@babylonjs/core/Animations/animation";
 
 const uuid = require("uuid/v4");
 const EventEmitter = require("events");
