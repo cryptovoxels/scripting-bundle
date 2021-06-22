@@ -1,9 +1,6 @@
 /* global postMessage */
 
 // const uuid = require('uuid/v4')
-import { Vector3 } from "./vendor/babylonjs/Maths/math";
-import { Animation } from "./vendor/babylonjs/Animations/animation";
-
 const throttle = require("lodash.throttle");
 const EventEmitter = require("events");
 
@@ -104,6 +101,57 @@ class Feature extends EventEmitter {
     c.set(d);
     return c;
   }
+  drag(
+    player,
+    clone = true,
+    REFRESH_RATE = 50,
+    DISTANCE_TO_PLAYER = 0.5,
+    UP_DOWN_CONSTANT = -0.65
+  ) {
+    function moveObject(player) {
+      // calculates new position of object
+      const playerRotation = player.rotation;
+
+      const xDelta =
+        DISTANCE_TO_PLAYER *
+        Math.cos(-playerRotation.y + Math.PI / 2 + Math.PI);
+      const yDelta = DISTANCE_TO_PLAYER * Math.tan(playerRotation.x);
+      const zDelta =
+        DISTANCE_TO_PLAYER *
+        Math.sin(-playerRotation.y + Math.PI / 2 + Math.PI);
+
+      const position = [
+        player.position.x - xDelta,
+        player.position.y - yDelta + UP_DOWN_CONSTANT,
+        player.position.z - zDelta,
+      ];
+
+      return position;
+    }
+    function setPosition(feature, player) {
+      // refreshes the positions
+      feature.set({ position: moveObject(player) });
+
+      if (!feature.position || !feature.rotation) {
+        parcel.removeFeature(feature);
+      } else {
+        setTimeout(() => {
+          setPosition(feature, player);
+        }, REFRESH_RATE);
+      }
+    }
+    let movableFeature = this;
+    if (clone) {
+      movableFeature = parcel.createFeature("vox-model");
+      const { x, y, z } = this.scale;
+      movableFeature.set({ scale: [x, y, z] });
+      movableFeature.set({ url: this._content.url });
+      movableFeature.position = this.position;
+      movableFeature.rotation = this.rotation;
+    }
+    setPosition(movableFeature, player);
+  }
+
   save(dict) {
     this.parcel.broadcast({
       type: "update",
