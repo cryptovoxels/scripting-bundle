@@ -12,10 +12,9 @@ import { Animation } from "./vendor/babylonjs.js";
 const uuid = require("uuid/v4");
 const EventEmitter = require("events");
 const Feature = require("./feature");
-const fetch = require("node-fetch");
+
 const { VoxelField } = require("./voxel-field");
 const Player = require("./player");
-
 class Parcel extends EventEmitter {
   constructor(id) {
     super();
@@ -203,13 +202,20 @@ class Parcel extends EventEmitter {
       return
     }
     const api_url = `https://www.cryptovoxels.com/api/parcels/${this.id}/snapshots.json`
-    fetch(api_url).then((r)=>r.json()).then((r)=>{
+    let promise;
+    if(typeof global == 'undefined' || !global.fetchJson){
+      /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
+      promise = fetch(api_url).then((r)=>r.json())
+    }else{
+      promise = fetchJson(api_url)
+    }
+    promise.then((r)=>{
       if(!r.success){
         this.snapshots = []
       }else{
         this.snapshots = r.snapshots
       }
-      console.log(this.snapshots)
+
       if(callback){
         callback(r.snapshots)
       }

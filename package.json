@@ -16,7 +16,7 @@
     "lodash": "^4.17.15",
     "lodash.throttle": "^4.1.1",
     "ndarray": "1.0.18",
-    "node-fetch": "2.6.1",
+    "node-fetch": "^2.6.1",
     "tinyify": "^2.5.1",
     "uuid": "3.3.2",
     "ws": "7.4.6"
@@ -26,14 +26,16 @@
       [
         "babelify",
         {
-          "presets": [[
-            "@babel/preset-env",
-            {
-              "targets": {
-                "chrome": "80"
+          "presets": [
+            [
+              "@babel/preset-env",
+              {
+                "targets": {
+                  "chrome": "80"
+                }
               }
-            }
-          ]],
+            ]
+          ],
           "sourceType": "module"
         }
       ]
