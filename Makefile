@@ -8,3 +8,7 @@ all:
 	cp bundle.max.js ../grid/
 	ls -lah bundle.min.js
 
+max:
+	npm run bundle
+	terser -o bundle.min.js -- bundle.js
+	terser --comments false -b -o bundle.max.js -- bundle.js 

@@ -1,4 +1,3 @@
-import { Vector3 } from "./vendor/babylonjs/Maths/math";
 
 const EventEmitter = require("events");
 
