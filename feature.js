@@ -1,8 +1,6 @@
 /* global postMessage */
 
 // const uuid = require('uuid/v4')
-import { Vector3 } from "./vendor/babylonjs/Maths/math";
-import { Animation } from "./vendor/babylonjs/Animations/animation";
 
 const throttle = require("lodash.throttle");
 const EventEmitter = require("events");
