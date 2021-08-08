@@ -183,7 +183,7 @@ class Parcel extends EventEmitter {
     return this.players;
   }
   /* Thottled functions */
-  fetchSnapshots = throttle((callback)=>{
+  fetchSnapshots = throttle((callback=null)=>{
     this.#fetchSnapshots(callback)
   }, 500, {
     leading: false,
@@ -196,11 +196,7 @@ class Parcel extends EventEmitter {
     trailing: true
   });
   
-  #fetchSnapshots(callback){
-    if(callback && typeof callback !=='function'){
-      console.log('Callback is not a function')
-      return
-    }
+  #fetchSnapshots(callback=null){
     const api_url = `https://www.cryptovoxels.com/api/parcels/${this.id}/snapshots.json`
     let promise;
     if(typeof global == 'undefined' || !global.fetchJson){
@@ -209,7 +205,7 @@ class Parcel extends EventEmitter {
     }else{
       promise = fetchJson(api_url)
     }
-    promise.then((r)=>{
+    promise.then(r=>{
       if(!r.success){
         this.snapshots = []
       }else{
@@ -220,31 +216,32 @@ class Parcel extends EventEmitter {
         callback(r.snapshots)
       }
     })
+  
   }
 
   #setSnapshot(snapshot_id){
     if(!this.snapshots){
-      console.log('Call this.fetchSnapshots first')
+      console.error('Call this.fetchSnapshots first')
       return
     }
     if(this.snapshots.length==0){
-      console.log('No snapshots for this parcel')
+      console.error('No snapshots for this parcel')
       return
     }
     const snapshot = this.snapshots.find((s)=>s.id==snapshot_id)
 
     if(!snapshot){
-      console.log('Could not find snapshot given ID')
+      console.error('Could not find snapshot given ID')
       return
     }
       
     if(!('content' in snapshot) || snapshot.is_snapshot!==true){
-      console.log('Not a valid snapshot')
+      console.error('Not a valid snapshot')
       return
     }
     
     if(!snapshot.content.voxels){
-      console.log('Snapshot has no voxels')
+      console.error('Snapshot has no voxels')
       return
     }
       
