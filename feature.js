@@ -174,6 +174,15 @@ class TextInput extends Feature {
   }
 }
 
+class SliderInput extends Feature {
+  constructor(parcel, obj) {
+    super(parcel, obj);
+    this.on('changed', e => {
+      this.value = e.value;
+    });
+  }
+
+}
 class Video extends Feature {
   play() {
     this.parcel.broadcast({
@@ -257,6 +266,8 @@ Feature.create = (parcel, obj) => {
     return new VidScreen(parcel, obj);
   } else if (obj.type === "text-input") {
     return new TextInput(parcel, obj);
+  } else if (obj.type === 'slider-input') {
+    return new SliderInput(parcel, obj);
   } else {
     return new Feature(parcel, obj);
   }
