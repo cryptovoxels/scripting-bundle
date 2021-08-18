@@ -15,6 +15,37 @@ const Feature = require("./feature");
 
 const { VoxelField } = require("./voxel-field");
 const Player = require("./player");
+
+function getGlobal() {
+  if (typeof global !== "undefined") {
+    return global;
+  } else if (typeof self !== "undefined") {
+    return self;
+  } else {
+    return null;
+  }
+}
+// the grid is usually `global` and the iframe when the script is not hosted is usually `self`;
+// Even though `window` will always be null, getGlobal() doesn't return it just in case, because we don't want
+// to override the setInterval of the window (could affect render).
+const G = getGlobal();
+if (G) {
+  G.setInterval = (function (setInterval) {
+    return function (func, time, ...args) {
+      let t = time;
+      if (isNaN(parseInt(time, 10))) {
+        console.error("setInterval interval is invalid");
+        return;
+      }
+      if (parseInt(time, 10) < 30) {
+        t = 30;
+        console.log("setInterval minimum is 30ms");
+      }
+      return setInterval.call(G, func, t, ...args);
+    };
+  })(G.setInterval);
+}
+
 class Parcel extends EventEmitter {
   constructor(id) {
     super();
@@ -184,19 +215,19 @@ class Parcel extends EventEmitter {
   }
   /* Thottled functions */
   fetchSnapshots = throttle((callback=null)=>{
-    this.#fetchSnapshots(callback)
+    this._fetchSnapshots(callback)
   }, 500, {
     leading: false,
     trailing: true
   });
   setSnapshot = throttle((index)=>{
-    this.#setSnapshot(index)
+    this._setSnapshot(index)
   }, 500, {
     leading: false,
     trailing: true
   });
   
-  #fetchSnapshots(callback=null){
+  _fetchSnapshots(callback=null){
     const api_url = `https://www.cryptovoxels.com/api/parcels/${this.id}/snapshots.json`
     let promise;
     if(typeof global == 'undefined' || !global.fetchJson){
@@ -219,9 +250,9 @@ class Parcel extends EventEmitter {
   
   }
 
-  #setSnapshot(snapshot_id){
+  _setSnapshot(snapshot_id){
     if(!this.snapshots){
-      console.error('Call this.fetchSnapshots first')
+      console.error('Call parcel.fetchSnapshots first')
       return
     }
     if(this.snapshots.length==0){
@@ -317,7 +348,7 @@ class Parcel extends EventEmitter {
         ws.player = new Player(e.data.player,this)
         let i = this.players.indexOf(oldPlayer)
           if (i!==-1) {
-            items[i] = ws.player;
+            this.players[i] = ws.player;
           }
         }else{
         // We do not have that player
