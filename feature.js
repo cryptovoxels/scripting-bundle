@@ -164,6 +164,44 @@ class Audio extends Feature {
     });
   }
 }
+class NftImage extends Feature {
+  constructor(parcel, obj) {
+    super(parcel, obj);
+  }
+  /* Thottled functions */
+  getNftData = throttle(
+    (callback = null) => {
+      this._getNftData(callback);
+    },
+    500,
+    {
+      leading: false,
+      trailing: true,
+    }
+  );
+
+  _getNftData(callback = null) {
+    if (!this._content.url) {
+      return null;
+    }
+    let contract = this._content.url.split("/")[4];
+    let token = this._content.url.split("/")[5];
+    const api_url = `https://img.cryptovoxels.com/node/opensea?contract=${contract}&token=${token}&force_update=1`;
+    let promise;
+    if (typeof global == "undefined" || !global.fetchJson) {
+      /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
+      promise = fetch(api_url).then((r) => r.json());
+    } else {
+      promise = fetchJson(api_url);
+    }
+    return promise.then((r) => {
+      if (callback) {
+        callback(r);
+      }
+      return r;
+    });
+  }
+}
 
 class TextInput extends Feature {
   constructor(parcel, obj) {
@@ -177,11 +215,10 @@ class TextInput extends Feature {
 class SliderInput extends Feature {
   constructor(parcel, obj) {
     super(parcel, obj);
-    this.on('changed', e => {
+    this.on("changed", (e) => {
       this.value = e.value;
     });
   }
-
 }
 class Video extends Feature {
   play() {
@@ -266,8 +303,10 @@ Feature.create = (parcel, obj) => {
     return new VidScreen(parcel, obj);
   } else if (obj.type === "text-input") {
     return new TextInput(parcel, obj);
-  } else if (obj.type === 'slider-input') {
+  } else if (obj.type === "slider-input") {
     return new SliderInput(parcel, obj);
+  } else if (obj.type === "nft-image") {
+    return new NftImage(parcel, obj);
   } else {
     return new Feature(parcel, obj);
   }

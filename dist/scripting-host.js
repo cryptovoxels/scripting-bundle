@@ -6,6 +6,8 @@
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -234,65 +236,131 @@ var Audio = /*#__PURE__*/function (_Feature) {
   return Audio;
 }(Feature);
 
-var TextInput = /*#__PURE__*/function (_Feature2) {
+var NftImage = /*#__PURE__*/function (_Feature2) {
   "use strict";
 
-  _inherits(TextInput, _Feature2);
+  _inherits(NftImage, _Feature2);
 
-  var _super3 = _createSuper(TextInput);
+  var _super3 = _createSuper(NftImage);
 
-  function TextInput(parcel, obj) {
+  function NftImage(parcel, obj) {
     var _this3;
 
-    _classCallCheck(this, TextInput);
+    _classCallCheck(this, NftImage);
 
     _this3 = _super3.call(this, parcel, obj);
 
-    _this3.on("changed", function (e) {
-      _this3.text = e.text;
-    });
+    _defineProperty(_assertThisInitialized(_this3), "fetchNftData", throttle(function () {
+      var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      _this3._fetchNftData(callback);
+    }, 500, {
+      leading: false,
+      trailing: true
+    }));
 
     return _this3;
   }
+  /* Thottled functions */
 
-  return TextInput;
+
+  _createClass(NftImage, [{
+    key: "_fetchNftData",
+    value: function _fetchNftData() {
+      var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (!this._content.url) {
+        return null;
+      }
+
+      var contract = this._content.url.split("/")[4];
+
+      var token = this._content.url.split("/")[5];
+
+      var api_url = "https://img.cryptovoxels.com/node/opensea?contract=".concat(contract, "&token=").concat(token, "&force_update=1");
+      var promise;
+
+      if (typeof __webpack_require__.g == "undefined" || !__webpack_require__.g.fetchJson) {
+        /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
+        promise = fetch(api_url).then(function (r) {
+          return r.json();
+        });
+      } else {
+        promise = fetchJson(api_url);
+      }
+
+      return promise.then(function (r) {
+        if (callback) {
+          callback(r);
+        }
+
+        return r;
+      });
+    }
+  }]);
+
+  return NftImage;
 }(Feature);
 
-var SliderInput = /*#__PURE__*/function (_Feature3) {
+var TextInput = /*#__PURE__*/function (_Feature3) {
   "use strict";
 
-  _inherits(SliderInput, _Feature3);
+  _inherits(TextInput, _Feature3);
 
-  var _super4 = _createSuper(SliderInput);
+  var _super4 = _createSuper(TextInput);
 
-  function SliderInput(parcel, obj) {
+  function TextInput(parcel, obj) {
     var _this4;
 
-    _classCallCheck(this, SliderInput);
+    _classCallCheck(this, TextInput);
 
     _this4 = _super4.call(this, parcel, obj);
 
-    _this4.on('changed', function (e) {
-      _this4.value = e.value;
+    _this4.on("changed", function (e) {
+      _this4.text = e.text;
     });
 
     return _this4;
   }
 
+  return TextInput;
+}(Feature);
+
+var SliderInput = /*#__PURE__*/function (_Feature4) {
+  "use strict";
+
+  _inherits(SliderInput, _Feature4);
+
+  var _super5 = _createSuper(SliderInput);
+
+  function SliderInput(parcel, obj) {
+    var _this5;
+
+    _classCallCheck(this, SliderInput);
+
+    _this5 = _super5.call(this, parcel, obj);
+
+    _this5.on("changed", function (e) {
+      _this5.value = e.value;
+    });
+
+    return _this5;
+  }
+
   return SliderInput;
 }(Feature);
 
-var Video = /*#__PURE__*/function (_Feature4) {
+var Video = /*#__PURE__*/function (_Feature5) {
   "use strict";
 
-  _inherits(Video, _Feature4);
+  _inherits(Video, _Feature5);
 
-  var _super5 = _createSuper(Video);
+  var _super6 = _createSuper(Video);
 
   function Video() {
     _classCallCheck(this, Video);
 
-    return _super5.apply(this, arguments);
+    return _super6.apply(this, arguments);
   }
 
   _createClass(Video, [{
@@ -324,17 +392,17 @@ var Video = /*#__PURE__*/function (_Feature4) {
   return Video;
 }(Feature);
 
-var Youtube = /*#__PURE__*/function (_Feature5) {
+var Youtube = /*#__PURE__*/function (_Feature6) {
   "use strict";
 
-  _inherits(Youtube, _Feature5);
+  _inherits(Youtube, _Feature6);
 
-  var _super6 = _createSuper(Youtube);
+  var _super7 = _createSuper(Youtube);
 
   function Youtube() {
     _classCallCheck(this, Youtube);
 
-    return _super6.apply(this, arguments);
+    return _super7.apply(this, arguments);
   }
 
   _createClass(Youtube, [{
@@ -366,46 +434,46 @@ var Youtube = /*#__PURE__*/function (_Feature5) {
   return Youtube;
 }(Feature);
 
-var VidScreen = /*#__PURE__*/function (_Feature6) {
+var VidScreen = /*#__PURE__*/function (_Feature7) {
   "use strict";
 
-  _inherits(VidScreen, _Feature6);
+  _inherits(VidScreen, _Feature7);
 
-  var _super7 = _createSuper(VidScreen);
+  var _super8 = _createSuper(VidScreen);
 
   function VidScreen(parcel, obj) {
-    var _this5;
+    var _this6;
 
     _classCallCheck(this, VidScreen);
 
-    _this5 = _super7.call(this, parcel, obj);
+    _this6 = _super8.call(this, parcel, obj);
 
-    _this5.on("start", function () {
-      return _this5.start();
+    _this6.on("start", function () {
+      return _this6.start();
     });
 
-    _this5.on("stop", function () {
-      return _this5.stop();
+    _this6.on("stop", function () {
+      return _this6.stop();
     });
 
-    return _this5;
+    return _this6;
   }
 
   _createClass(VidScreen, [{
     key: "start",
     value: function start() {
-      var _this6 = this;
+      var _this7 = this;
 
       this.screen = new Uint8Array(64 * 64 * 3);
       this.screenWidth = 64;
       this.screenHeight = 64;
       this._interval = setInterval(function () {
-        _this6.emit("frame");
+        _this7.emit("frame");
 
         postMessage({
           type: "screen",
-          uuid: _this6.uuid,
-          screen: _this6.screen
+          uuid: _this7.uuid,
+          screen: _this7.screen
         });
       }, 1000 / 30);
     }
@@ -430,8 +498,10 @@ Feature.create = function (parcel, obj) {
     return new VidScreen(parcel, obj);
   } else if (obj.type === "text-input") {
     return new TextInput(parcel, obj);
-  } else if (obj.type === 'slider-input') {
+  } else if (obj.type === "slider-input") {
     return new SliderInput(parcel, obj);
+  } else if (obj.type === "nft-image") {
+    return new NftImage(parcel, obj);
   } else {
     return new Feature(parcel, obj);
   }
