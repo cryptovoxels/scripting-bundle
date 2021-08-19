@@ -111,12 +111,7 @@ class Feature extends EventEmitter {
   }
 
   createAnimation(key) {
-    return new _animation.Animation(
-      null,
-      key,
-      30,
-      _animation.Animation.ANIMATIONTYPE_VECTOR3
-    );
+    return new Animation(null, key, 30, Animation.ANIMATIONTYPE_VECTOR3);
   }
 
   startAnimations(animationArray) {
@@ -177,11 +172,10 @@ class TextInput extends Feature {
 class SliderInput extends Feature {
   constructor(parcel, obj) {
     super(parcel, obj);
-    this.on('changed', e => {
+    this.on("changed", (e) => {
       this.value = e.value;
     });
   }
-
 }
 class Video extends Feature {
   play() {
@@ -266,7 +260,7 @@ Feature.create = (parcel, obj) => {
     return new VidScreen(parcel, obj);
   } else if (obj.type === "text-input") {
     return new TextInput(parcel, obj);
-  } else if (obj.type === 'slider-input') {
+  } else if (obj.type === "slider-input") {
     return new SliderInput(parcel, obj);
   } else {
     return new Feature(parcel, obj);
