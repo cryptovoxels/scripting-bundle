@@ -317,7 +317,7 @@ var TextInput = /*#__PURE__*/function (_Feature3) {
     _this4 = _super4.call(this, parcel, obj);
 
     _this4.on("changed", function (e) {
-      _this4.value = e.value;
+      _this4.text = e.text;
     });
 
     return _this4;
