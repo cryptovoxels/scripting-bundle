@@ -250,10 +250,10 @@ var NftImage = /*#__PURE__*/function (_Feature2) {
 
     _this3 = _super3.call(this, parcel, obj);
 
-    _defineProperty(_assertThisInitialized(_this3), "fetchNftData", throttle(function () {
+    _defineProperty(_assertThisInitialized(_this3), "getNftData", throttle(function () {
       var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-      _this3._fetchNftData(callback);
+      _this3._getNftData(callback);
     }, 500, {
       leading: false,
       trailing: true
@@ -265,8 +265,8 @@ var NftImage = /*#__PURE__*/function (_Feature2) {
 
 
   _createClass(NftImage, [{
-    key: "_fetchNftData",
-    value: function _fetchNftData() {
+    key: "_getNftData",
+    value: function _getNftData() {
       var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       if (!this._content.url) {
