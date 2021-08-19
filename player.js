@@ -1,4 +1,3 @@
-
 const EventEmitter = require("events");
 
 class Player extends EventEmitter {
@@ -9,8 +8,8 @@ class Player extends EventEmitter {
     this.uuid = description && description.uuid;
     this.name = description && description.name;
     this.wallet = description && description.wallet;
-    this.position = new _math.Vector3();
-    this.rotation = new _math.Vector3();
+    this.position = new Vector3();
+    this.rotation = new Vector3();
     this.collectibles = description && description.collectibles;
   } // get name () {
   //   return this.user.name

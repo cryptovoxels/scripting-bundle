@@ -42,11 +42,11 @@ class Feature extends EventEmitter {
         return value;
       },
     });
-    this._position = new _math.Vector3();
+    this._position = new Vector3();
     this.position = new Proxy(this._position, handler("position"));
-    this._rotation = new _math.Vector3();
+    this._rotation = new Vector3();
     this.rotation = new Proxy(this._rotation, handler("rotation"));
-    this._scale = new _math.Vector3();
+    this._scale = new Vector3();
     this.scale = new Proxy(this._scale, handler("scale"));
     this.updateVectors();
   }
