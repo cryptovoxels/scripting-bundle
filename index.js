@@ -13,6 +13,8 @@ const throttle = require('lodash.throttle')
 const uuid = require("uuid/v4");
 const EventEmitter = require("events");
 const Feature = require("./feature");
+const emojis = require("./helpers.js").emojis;
+const animations = require("./helpers.js").animations;
 
 const { VoxelField } = require("./voxel-field");
 const Player = require("./player");
@@ -45,6 +47,9 @@ if (G) {
       return setInterval.call(G, func, t, ...args);
     };
   })(G.setInterval);
+
+  G.emojis = emojis
+  G.animations = animations
 }
 
 class Parcel extends EventEmitter {

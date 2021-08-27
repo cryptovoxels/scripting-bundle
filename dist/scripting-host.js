@@ -587,6 +587,8 @@ var _require = __webpack_require__(486),
 
 var emojis = __webpack_require__(743).emojis;
 
+var animations = __webpack_require__(743).animations;
+
 var Player = /*#__PURE__*/function (_EventEmitter) {
   "use strict";
 
@@ -611,7 +613,26 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
         uuid: _this.uuid,
         emote: emoji
       });
-    }, 200, {
+    }, 500, {
+      leading: true,
+      trailing: false
+    }));
+
+    _defineProperty(_assertThisInitialized(_this), "animate", throttle(function (animation) {
+      var a = animations.find(function (a) {
+        return a.name == animation;
+      });
+
+      if (!a) {
+        return;
+      }
+
+      _this.parcel.broadcast({
+        type: "player-animate",
+        uuid: _this.uuid,
+        animation: a.animation
+      });
+    }, 10000, {
       leading: true,
       trailing: false
     }));
@@ -31928,6 +31949,10 @@ var EventEmitter = __webpack_require__(187);
 
 var Feature = __webpack_require__(170);
 
+var emojis = __webpack_require__(743).emojis;
+
+var animations = __webpack_require__(743).animations;
+
 var _require = __webpack_require__(952),
     VoxelField = _require.VoxelField;
 
@@ -31970,6 +31995,9 @@ if (G) {
       return setInterval.call.apply(setInterval, [G, func, t].concat(args));
     };
   }(G.setInterval);
+
+  G.emojis = emojis;
+  G.animations = animations;
 }
 
 var Parcel = /*#__PURE__*/function (_EventEmitter) {

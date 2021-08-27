@@ -1,6 +1,7 @@
 const EventEmitter = require("events");
 const { throttle } = require("lodash");
 const emojis = require("./helpers.js").emojis;
+const animations = require("./helpers.js").animations;
 class Player extends EventEmitter {
   constructor(description, parcel) {
     super();
@@ -25,7 +26,23 @@ class Player extends EventEmitter {
         emote: emoji,
       });
     },
-    200,
+    500,
+    { leading: true, trailing: false }
+  );
+
+  animate = throttle(
+    (animation) => {
+      const a = animations.find((a)=>a.name==animation)
+      if(!a){
+        return
+      }
+      this.parcel.broadcast({
+        type: "player-animate",
+        uuid: this.uuid,
+        animation: a.animation,
+      });
+    },
+    10000,
     { leading: true, trailing: false }
   );
 
