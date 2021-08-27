@@ -603,7 +603,6 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
 
     _defineProperty(_assertThisInitialized(_this), "emote", throttle(function (emoji) {
       if (!emojis.includes(emoji)) {
-        console.log('emoji is bad');
         return;
       }
 
