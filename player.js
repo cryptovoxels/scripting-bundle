@@ -1,5 +1,6 @@
 const EventEmitter = require("events");
-
+const { throttle } = require("lodash");
+const emojis = require("./helpers.js").emojis;
 class Player extends EventEmitter {
   constructor(description, parcel) {
     super();
@@ -11,15 +12,23 @@ class Player extends EventEmitter {
     this.position = new Vector3();
     this.rotation = new Vector3();
     this.collectibles = description && description.collectibles;
-  } // get name () {
-  //   return this.user.name
-  // }
-  // get wallet () {
-  //   return this.user.wallet
-  // }
-  // get uuid () {
-  //   return this.uuid
-  // }
+  }
+
+  emote = throttle(
+    (emoji) => {
+      if(!emojis.includes(emoji)){
+        return
+      }
+      this.parcel.broadcast({
+        type: "player-emote",
+        uuid: this.uuid,
+        emote: emoji,
+      });
+    },
+    200,
+    { leading: true, trailing: false }
+  );
+
   teleportTo(coords) {
     if (!coords || coords == "") {
       return;
@@ -33,7 +42,7 @@ class Player extends EventEmitter {
     }
     this._numTeleport++;
     this.parcel.broadcast({
-      type: "teleport-player",
+      type: "player-teleport",
       uuid: this.uuid,
       coordinates: coords,
     });
