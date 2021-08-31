@@ -30,6 +30,8 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 
 /* global postMessage */
 // const uuid = require('uuid/v4')
+var FeatureBasicGUI = __webpack_require__(163);
+
 var throttle = __webpack_require__(96);
 
 var EventEmitter = __webpack_require__(187);
@@ -51,6 +53,7 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
     _this.parcel = parcel;
     _this.uuid = obj.uuid;
     _this._content = obj;
+    _this.guiShowing = null;
     var mutated = throttle(function () {
       var s = {
         position: _this._content.position,
@@ -185,8 +188,26 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
       });
     }
   }, {
+    key: "createBasicGui",
+    value: function createBasicGui() {
+      var id = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var gui = new FeatureBasicGUI(this);
+      gui.id = id;
+      this.guiShowing = gui;
+      return gui;
+    }
+  }, {
+    key: "removeGui",
+    value: function removeGui() {
+      if (this.guiShowing) {
+        this.guiShowing.hide();
+        this.guiShowing = null;
+      }
+    }
+  }, {
     key: "remove",
     value: function remove() {
+      this.removeGui();
       this.parcel.removeFeature(this);
     }
   }]);
@@ -508,6 +529,191 @@ Feature.create = function (parcel, obj) {
 };
 
 module.exports = Feature;
+
+/***/ }),
+
+/***/ 163:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+var uuid = __webpack_require__(171);
+
+var EventEmitter = __webpack_require__(187);
+
+var FeatureBasicGUI = /*#__PURE__*/function (_EventEmitter) {
+  "use strict";
+
+  _inherits(FeatureBasicGUI, _EventEmitter);
+
+  var _super = _createSuper(FeatureBasicGUI);
+
+  function FeatureBasicGUI(feature) {
+    var _this;
+
+    _classCallCheck(this, FeatureBasicGUI);
+
+    _this = _super.call(this);
+    _this.feature = feature;
+    _this.uuid = uuid();
+    _this.listOfControls = [];
+    _this.showing = false;
+    return _this;
+  }
+
+  _createClass(FeatureBasicGUI, [{
+    key: "addButton",
+    value: function addButton() {
+      var text = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var id = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      var positionInGrid = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [0, 0];
+
+      if (!id) {
+        id = "unknown" + this.listOfControls.length + 1;
+      }
+
+      if (!text) {
+        text = "Text";
+      }
+
+      var control = {
+        type: "button",
+        id: id,
+        text: text,
+        positionInGrid: positionInGrid
+      };
+
+      if (this.replacesOldControl(control)) {
+        return control;
+      }
+
+      this.listOfControls.push(control);
+      return control;
+    }
+  }, {
+    key: "addText",
+    value: function addText() {
+      var text = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var positionInGrid = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [0, 0];
+
+      if (!text) {
+        text = "Text";
+      }
+
+      var control = {
+        type: "text",
+        text: text,
+        positionInGrid: positionInGrid
+      };
+
+      if (this.replacesOldControl(control)) {
+        return control;
+      }
+
+      this.listOfControls.push(control);
+      return control;
+    }
+  }, {
+    key: "replacesOldControl",
+    value: function replacesOldControl(control) {
+      // Replace a control if the position is the same as another.
+      var controlToReplace = this.getControlByPosition(control.positionInGrid);
+
+      if (controlToReplace) {
+        var i = this.listOfControls.indexOf(controlToReplace);
+        this.listOfControls[i] = control;
+        return true;
+      }
+
+      return false;
+    }
+  }, {
+    key: "defaultControl",
+    get: function get() {
+      return {
+        type: "text",
+        text: "Text",
+        positionInGrid: [0, 0]
+      };
+    }
+  }, {
+    key: "removeControl",
+    value: function removeControl(id) {
+      var c = this.getControlById(id);
+      this.listOfControls.splice(this.listOfControls.indexOf(c), 1);
+    }
+  }, {
+    key: "getControlById",
+    value: function getControlById(id) {
+      return this.listOfControls.find(function (control) {
+        return control.id == id;
+      });
+    }
+  }, {
+    key: "getControlByPosition",
+    value: function getControlByPosition(positionInGrid) {
+      return this.listOfControls.find(function (control) {
+        return control.positionInGrid[0] == positionInGrid[0] && control.positionInGrid[1] == positionInGrid[1];
+      });
+    }
+  }, {
+    key: "show",
+    value: function show() {
+      if (!this.listOfControls || !this.listOfControls.length) {
+        this.listOfControls[0] = this.defaultControl;
+      }
+
+      this.feature.parcel.broadcast({
+        type: "create-feature-gui",
+        uuid: this.feature.uuid,
+        gui: {
+          uuid: this.uuid,
+          listOfControls: this.listOfControls
+        }
+      });
+      this.showing = true;
+    }
+  }, {
+    key: "hide",
+    value: function hide() {
+      this.feature.parcel.broadcast({
+        type: "destroy-feature-gui",
+        uuid: this.feature.uuid
+      });
+      this.showing = false;
+      this.feature.guiShowing = null;
+    }
+  }, {
+    key: "update",
+    value: function update() {
+      this.show();
+    }
+  }]);
+
+  return FeatureBasicGUI;
+}(EventEmitter);
+
+module.exports = FeatureBasicGUI;
 
 /***/ }),
 
@@ -32082,6 +32288,11 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
           e.normal = Vector3.FromArray(e.normal);
         }
 
+        if (f && e.guiTarget && f.gui) {
+          f.gui.emit("click", e);
+          return;
+        }
+
         !!f && f.emit("click", e);
         !!player && player.emit("click", e);
       } else if (msg.type === "trigger") {
@@ -32348,6 +32559,7 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
 
       if (i > -1) {
         this.featuresList.splice(i);
+        f.removeGui();
       }
     }
   }, {

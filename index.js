@@ -9,7 +9,7 @@ import {
 } from "@babylonjs/core/Maths/math";
 
 import { Animation } from "@babylonjs/core/Animations/animation";
-const throttle = require('lodash.throttle')
+const throttle = require("lodash.throttle");
 const uuid = require("uuid/v4");
 const EventEmitter = require("events");
 const Feature = require("./feature");
@@ -48,8 +48,8 @@ if (G) {
     };
   })(G.setInterval);
 
-  G.emojis = emojis
-  G.animations = animations
+  G.emojis = emojis;
+  G.animations = animations;
 }
 
 class Parcel extends EventEmitter {
@@ -104,6 +104,11 @@ class Parcel extends EventEmitter {
       if (e.point) {
         e.point = Vector3.FromArray(e.point);
         e.normal = Vector3.FromArray(e.normal);
+      }
+
+      if (f && e.guiTarget && f.gui) {
+        f.gui.emit("click", e);
+        return;
       }
 
       !!f && f.emit("click", e);
@@ -352,6 +357,7 @@ class Parcel extends EventEmitter {
 
     if (i > -1) {
       this.featuresList.splice(i);
+      f.removeGui()
     }
   }
 

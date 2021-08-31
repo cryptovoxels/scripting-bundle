@@ -1,7 +1,7 @@
 /* global postMessage */
 
 // const uuid = require('uuid/v4')
-
+const FeatureBasicGUI =require("./gui.js");
 const throttle = require("lodash.throttle");
 const EventEmitter = require("events");
 
@@ -12,6 +12,7 @@ class Feature extends EventEmitter {
     this.parcel = parcel;
     this.uuid = obj.uuid;
     this._content = obj;
+    this.guiShowing = null;
     const mutated = throttle(
       () => {
         const s = {
@@ -132,8 +133,23 @@ class Feature extends EventEmitter {
     });
   }
 
+  createBasicGui(id = null) {
+    const gui = new FeatureBasicGUI(this);
+    gui.id = id;
+    this.guiShowing = gui;
+    return gui;
+  }
+
+  removeGui(){
+    if(this.guiShowing){
+      this.guiShowing.hide()
+      this.guiShowing = null
+    }
+  }
+
   remove() {
-    this.parcel.removeFeature(this);
+    this.removeGui()
+    this.parcel.removeFeature(this)
   }
 }
 
