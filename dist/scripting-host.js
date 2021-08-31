@@ -191,7 +191,8 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
     key: "createBasicGui",
     value: function createBasicGui() {
       var id = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var gui = new FeatureBasicGUI(this);
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      var gui = new FeatureBasicGUI(this, options);
       gui.id = id;
       this.gui = gui;
       return gui;
@@ -200,7 +201,7 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
     key: "removeGui",
     value: function removeGui() {
       if (this.gui) {
-        this.gui.hide();
+        this.gui.destroy();
         this.gui = null;
       }
     }
@@ -557,6 +558,8 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var uuid = __webpack_require__(171);
 
 var EventEmitter = __webpack_require__(187);
@@ -565,12 +568,28 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
   "use strict";
 
   function FeatureBasicGUI(feature) {
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+      billBoardMode: 2
+    };
+
     _classCallCheck(this, FeatureBasicGUI);
+
+    _defineProperty(this, "billBoardMode", 1);
 
     this.feature = feature;
     this.uuid = uuid();
     this.listOfControls = [];
     this.showing = false;
+
+    if (options) {
+      if (options.billBoardMode == 0 || // BILLBOARD_NONE
+      options.billBoardMode == 2 // BILLBOARD_Y
+      ) {
+        this.billBoardMode = options.billBoardMode;
+      } else {
+        this.billBoardMode = 2;
+      }
+    }
   }
 
   _createClass(FeatureBasicGUI, [{
@@ -680,20 +699,21 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
         uuid: this.feature.uuid,
         gui: {
           uuid: this.uuid,
-          listOfControls: this.listOfControls
+          listOfControls: this.listOfControls,
+          billBoardMode: this.billBoardMode
         }
       });
       this.showing = true;
     }
   }, {
-    key: "hide",
-    value: function hide() {
+    key: "destroy",
+    value: function destroy() {
       this.feature.parcel.broadcast({
         type: "destroy-feature-gui",
         uuid: this.feature.uuid
       });
+      this.listOfControls = [];
       this.showing = false;
-      this.feature.gui = null;
     }
   }, {
     key: "update",

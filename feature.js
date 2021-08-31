@@ -133,8 +133,8 @@ class Feature extends EventEmitter {
     });
   }
 
-  createBasicGui(id = null) {
-    const gui = new FeatureBasicGUI(this);
+  createBasicGui(id = null,options=null) {
+    const gui = new FeatureBasicGUI(this,options);
     gui.id = id;
     this.gui = gui;
     return gui;
@@ -142,7 +142,7 @@ class Feature extends EventEmitter {
 
   removeGui(){
     if(this.gui){
-      this.gui.hide()
+      this.gui.destroy()
       this.gui = null
     }
   }

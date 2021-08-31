@@ -1,11 +1,23 @@
 const uuid = require("uuid/v4");
 const EventEmitter = require("events");
 class FeatureBasicGUI {
-  constructor(feature) {
+  billBoardMode = 1
+  constructor(feature, options = { billBoardMode: 2 }) {
     this.feature = feature;
     this.uuid = uuid();
     this.listOfControls = [];
     this.showing = false;
+
+    if (options) {
+      if (
+        options.billBoardMode == 0 || // BILLBOARD_NONE
+        options.billBoardMode == 2 // BILLBOARD_Y
+      ) {
+        this.billBoardMode = options.billBoardMode;
+      } else {
+        this.billBoardMode = 2;
+      }
+    }
   }
 
   addButton(text = null, id = null, positionInGrid = [0, 0]) {
@@ -15,7 +27,12 @@ class FeatureBasicGUI {
     if (!text) {
       text = "Text";
     }
-    const control = new guiControl({ type: "button", id, text, positionInGrid });
+    const control = new guiControl({
+      type: "button",
+      id,
+      text,
+      positionInGrid,
+    });
     if (this.replacesOldControl(control)) {
       return control;
     }
@@ -74,18 +91,18 @@ class FeatureBasicGUI {
     this.feature.parcel.broadcast({
       type: "create-feature-gui",
       uuid: this.feature.uuid,
-      gui: { uuid: this.uuid, listOfControls: this.listOfControls },
+      gui: { uuid: this.uuid, listOfControls: this.listOfControls, billBoardMode:this.billBoardMode },
     });
     this.showing = true;
   }
 
-  hide() {
+  destroy() {
     this.feature.parcel.broadcast({
       type: "destroy-feature-gui",
       uuid: this.feature.uuid,
     });
+    this.listOfControls = []
     this.showing = false;
-    this.feature.gui = null;
   }
 
   update() {
@@ -96,13 +113,13 @@ class FeatureBasicGUI {
 class guiControl extends EventEmitter {
   constructor(options) {
     super();
-    if(!options){
+    if (!options) {
       options = {
-        type:"text",
-        id:null,
+        type: "text",
+        id: null,
         text: "Text",
-        positionInGrid: [0, 0]
-      }
+        positionInGrid: [0, 0],
+      };
     }
     this.type = options.type || "text";
     this.id = options.id;
