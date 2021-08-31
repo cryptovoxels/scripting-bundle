@@ -1,9 +1,7 @@
 const uuid = require("uuid/v4");
 const EventEmitter = require("events");
-
-class FeatureBasicGUI extends EventEmitter {
+class FeatureBasicGUI {
   constructor(feature) {
-    super();
     this.feature = feature;
     this.uuid = uuid();
     this.listOfControls = [];
@@ -17,9 +15,9 @@ class FeatureBasicGUI extends EventEmitter {
     if (!text) {
       text = "Text";
     }
-    const control = { type: "button", id, text, positionInGrid };
-    if(this.replacesOldControl(control)){
-      return control
+    const control = new guiControl({ type: "button", id, text, positionInGrid });
+    if (this.replacesOldControl(control)) {
+      return control;
     }
     this.listOfControls.push(control);
     return control;
@@ -29,9 +27,9 @@ class FeatureBasicGUI extends EventEmitter {
     if (!text) {
       text = "Text";
     }
-    const control = { type: "text", text, positionInGrid };
-    if(this.replacesOldControl(control)){
-      return control
+    const control = new guiControl({ type: "text", text, positionInGrid });
+    if (this.replacesOldControl(control)) {
+      return control;
     }
     this.listOfControls.push(control);
     return control;
@@ -45,7 +43,7 @@ class FeatureBasicGUI extends EventEmitter {
       this.listOfControls[i] = control;
       return true;
     }
-    return false
+    return false;
   }
 
   get defaultControl() {
@@ -60,6 +58,7 @@ class FeatureBasicGUI extends EventEmitter {
   getControlById(id) {
     return this.listOfControls.find((control) => control.id == id);
   }
+
   getControlByPosition(positionInGrid) {
     return this.listOfControls.find(
       (control) =>
@@ -70,7 +69,7 @@ class FeatureBasicGUI extends EventEmitter {
 
   show() {
     if (!this.listOfControls || !this.listOfControls.length) {
-      this.listOfControls[0] = this.defaultControl;
+      this.listOfControls[0] = new guiControl(this.defaultControl);
     }
     this.feature.parcel.broadcast({
       type: "create-feature-gui",
@@ -86,11 +85,29 @@ class FeatureBasicGUI extends EventEmitter {
       uuid: this.feature.uuid,
     });
     this.showing = false;
-    this.feature.guiShowing = null;
+    this.feature.gui = null;
   }
 
-  update(){
-    this.show()
+  update() {
+    this.show();
+  }
+}
+
+class guiControl extends EventEmitter {
+  constructor(options) {
+    super();
+    if(!options){
+      options = {
+        type:"text",
+        id:null,
+        text: "Text",
+        positionInGrid: [0, 0]
+      }
+    }
+    this.type = options.type || "text";
+    this.id = options.id;
+    this.text = options.text || "Text";
+    this.positionInGrid = options.positionInGrid || [0, 0];
   }
 }
 

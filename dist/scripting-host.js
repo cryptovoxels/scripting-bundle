@@ -53,7 +53,7 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
     _this.parcel = parcel;
     _this.uuid = obj.uuid;
     _this._content = obj;
-    _this.guiShowing = null;
+    _this.gui = null;
     var mutated = throttle(function () {
       var s = {
         position: _this._content.position,
@@ -193,15 +193,15 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
       var id = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
       var gui = new FeatureBasicGUI(this);
       gui.id = id;
-      this.guiShowing = gui;
+      this.gui = gui;
       return gui;
     }
   }, {
     key: "removeGui",
     value: function removeGui() {
-      if (this.guiShowing) {
-        this.guiShowing.hide();
-        this.guiShowing = null;
+      if (this.gui) {
+        this.gui.hide();
+        this.gui = null;
       }
     }
   }, {
@@ -537,12 +537,6 @@ module.exports = Feature;
 
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
@@ -557,28 +551,26 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 var uuid = __webpack_require__(171);
 
 var EventEmitter = __webpack_require__(187);
 
-var FeatureBasicGUI = /*#__PURE__*/function (_EventEmitter) {
+var FeatureBasicGUI = /*#__PURE__*/function () {
   "use strict";
 
-  _inherits(FeatureBasicGUI, _EventEmitter);
-
-  var _super = _createSuper(FeatureBasicGUI);
-
   function FeatureBasicGUI(feature) {
-    var _this;
-
     _classCallCheck(this, FeatureBasicGUI);
 
-    _this = _super.call(this);
-    _this.feature = feature;
-    _this.uuid = uuid();
-    _this.listOfControls = [];
-    _this.showing = false;
-    return _this;
+    this.feature = feature;
+    this.uuid = uuid();
+    this.listOfControls = [];
+    this.showing = false;
   }
 
   _createClass(FeatureBasicGUI, [{
@@ -596,12 +588,12 @@ var FeatureBasicGUI = /*#__PURE__*/function (_EventEmitter) {
         text = "Text";
       }
 
-      var control = {
+      var control = new guiControl({
         type: "button",
         id: id,
         text: text,
         positionInGrid: positionInGrid
-      };
+      });
 
       if (this.replacesOldControl(control)) {
         return control;
@@ -620,11 +612,11 @@ var FeatureBasicGUI = /*#__PURE__*/function (_EventEmitter) {
         text = "Text";
       }
 
-      var control = {
+      var control = new guiControl({
         type: "text",
         text: text,
         positionInGrid: positionInGrid
-      };
+      });
 
       if (this.replacesOldControl(control)) {
         return control;
@@ -680,7 +672,7 @@ var FeatureBasicGUI = /*#__PURE__*/function (_EventEmitter) {
     key: "show",
     value: function show() {
       if (!this.listOfControls || !this.listOfControls.length) {
-        this.listOfControls[0] = this.defaultControl;
+        this.listOfControls[0] = new guiControl(this.defaultControl);
       }
 
       this.feature.parcel.broadcast({
@@ -701,7 +693,7 @@ var FeatureBasicGUI = /*#__PURE__*/function (_EventEmitter) {
         uuid: this.feature.uuid
       });
       this.showing = false;
-      this.feature.guiShowing = null;
+      this.feature.gui = null;
     }
   }, {
     key: "update",
@@ -711,6 +703,39 @@ var FeatureBasicGUI = /*#__PURE__*/function (_EventEmitter) {
   }]);
 
   return FeatureBasicGUI;
+}();
+
+var guiControl = /*#__PURE__*/function (_EventEmitter) {
+  "use strict";
+
+  _inherits(guiControl, _EventEmitter);
+
+  var _super = _createSuper(guiControl);
+
+  function guiControl(options) {
+    var _this;
+
+    _classCallCheck(this, guiControl);
+
+    _this = _super.call(this);
+
+    if (!options) {
+      options = {
+        type: "text",
+        id: null,
+        text: "Text",
+        positionInGrid: [0, 0]
+      };
+    }
+
+    _this.type = options.type || "text";
+    _this.id = options.id;
+    _this.text = options.text || "Text";
+    _this.positionInGrid = options.positionInGrid || [0, 0];
+    return _this;
+  }
+
+  return guiControl;
 }(EventEmitter);
 
 module.exports = FeatureBasicGUI;
@@ -32289,7 +32314,7 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
         }
 
         if (f && e.guiTarget && f.gui) {
-          f.gui.emit("click", e);
+          f.gui.getControlById(e.guiTarget).emit("click", e);
           return;
         }
 

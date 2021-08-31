@@ -12,7 +12,7 @@ class Feature extends EventEmitter {
     this.parcel = parcel;
     this.uuid = obj.uuid;
     this._content = obj;
-    this.guiShowing = null;
+    this.gui = null;
     const mutated = throttle(
       () => {
         const s = {
@@ -136,14 +136,14 @@ class Feature extends EventEmitter {
   createBasicGui(id = null) {
     const gui = new FeatureBasicGUI(this);
     gui.id = id;
-    this.guiShowing = gui;
+    this.gui = gui;
     return gui;
   }
 
   removeGui(){
-    if(this.guiShowing){
-      this.guiShowing.hide()
-      this.guiShowing = null
+    if(this.gui){
+      this.gui.hide()
+      this.gui = null
     }
   }
 

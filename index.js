@@ -107,7 +107,7 @@ class Parcel extends EventEmitter {
       }
 
       if (f && e.guiTarget && f.gui) {
-        f.gui.emit("click", e);
+        f.gui.getControlById(e.guiTarget).emit("click", e);
         return;
       }
 
