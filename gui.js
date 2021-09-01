@@ -21,7 +21,7 @@ class FeatureBasicGUI {
     }
   }
 
-  addButton(text = null, id = null, positionInGrid = [0, 0]) {
+  addButton(text = null, positionInGrid = [0, 0], id = null) {
     if (!id) {
       id = "unknown" + this._listOfControls.length + 1;
     }
@@ -34,7 +34,7 @@ class FeatureBasicGUI {
       text,
       positionInGrid,
     });
-    if (this.replacesOldControl(control)) {
+    if (this._replacesOldControl(control)) {
       return control;
     }
     if (this._listOfControls.length > 15) {
@@ -44,16 +44,17 @@ class FeatureBasicGUI {
     return control;
   }
 
-  addText(text = null, positionInGrid = [0, 0]) {
+  addText(text = null, positionInGrid = [0, 0], id = null) {
     if (!text) {
       text = "Text";
     }
     const control = new guiControl(this, {
       type: "text",
+      id,
       text,
       positionInGrid,
     });
-    if (this.replacesOldControl(control)) {
+    if (this._replacesOldControl(control)) {
       return control;
     }
     if (this._listOfControls.length > 15) {
@@ -63,7 +64,7 @@ class FeatureBasicGUI {
     return control;
   }
 
-  replacesOldControl(control) {
+  _replacesOldControl(control) {
     // Replace a control if the position is the same as another.
     let controlToReplace = this.getControlByPosition(control.positionInGrid);
     if (controlToReplace) {
@@ -75,12 +76,7 @@ class FeatureBasicGUI {
   }
 
   get defaultControl() {
-    return { type: "text", text: "Text", positionInGrid: [0, 0] };
-  }
-
-  removeControl(id) {
-    let c = this.getControlById(id);
-    this._listOfControls.splice(this._listOfControls.indexOf(c), 1);
+    return { type: "text", text: "Text", id: null, positionInGrid: [0, 0] };
   }
 
   getControlById(id) {
@@ -112,7 +108,7 @@ class FeatureBasicGUI {
       this._listOfControls[0] = new guiControl(this, this.defaultControl);
     }
     if (this._listOfControls.length > 15) {
-      this._listOfControls = this._listOfControls.slice(0, 15)
+      this._listOfControls = this._listOfControls.slice(0, 15);
     }
 
     this.feature.parcel.broadcast({
@@ -149,21 +145,35 @@ class guiControl extends EventEmitter {
       };
     }
     this.gui = gui;
-    this.uuid = uuid();
+    this._uuid = uuid();
     this.type = options.type || "text";
     this.id = options.id;
     this.text = options.text || "Text";
     this.positionInGrid = options.positionInGrid || [0, 0];
   }
 
+  get uuid() {
+    return this._uuid;
+  }
+
   get summary() {
     return {
-      uuid: this.uuid,
+      uuid: this._uuid,
       type: this.type,
       id: this.id,
       text: this.text,
       positionInGrid: this.positionInGrid,
     };
+  }
+
+  remove() {
+    if (this.gui && this.gui._listOfControls.length > 0) {
+      this.gui._listOfControls.splice(
+        this.gui._listOfControls.indexOf(this),
+        1
+      );
+    }
+    this.gui.show();
   }
 
   update() {
