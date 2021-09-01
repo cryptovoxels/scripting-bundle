@@ -170,7 +170,7 @@ class guiControl extends EventEmitter {
     if (this.gui && this.gui.showing) {
       this.gui.feature.parcel.broadcast({
         type: "update-feature-gui",
-        uuid: this.feature.uuid,
+        uuid: this.gui.feature.uuid,
         control: this.summary,
       });
     }
