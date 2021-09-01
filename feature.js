@@ -1,6 +1,7 @@
 /* global postMessage */
 
 // const uuid = require('uuid/v4')
+const FeatureBasicGUI = require("./gui");
 
 const throttle = require("lodash.throttle");
 const EventEmitter = require("events");
@@ -12,6 +13,7 @@ class Feature extends EventEmitter {
     this.parcel = parcel;
     this.uuid = obj.uuid;
     this._content = obj;
+    this.gui = null;
     const mutated = throttle(
       () => {
         const s = {
@@ -132,7 +134,22 @@ class Feature extends EventEmitter {
     });
   }
 
+  createBasicGui(id = null, options = null) {
+    const gui = new FeatureBasicGUI(this, options);
+    gui.id = id;
+    this.gui = gui;
+    return gui;
+  }
+
+  removeGui() {
+    if (this.gui) {
+      this.gui.destroy();
+      this.gui = null;
+    }
+  }
+
   remove() {
+    this.removeGui();
     this.parcel.removeFeature(this);
   }
 }
@@ -157,6 +174,9 @@ class Audio extends Feature {
       type: "stop",
       uuid: this.uuid,
     });
+  }
+  createBasicGui() {
+    console.error("Gui not supported on 2D features.");
   }
 }
 class NftImage extends Feature {
@@ -196,6 +216,9 @@ class NftImage extends Feature {
       return r;
     });
   }
+  createBasicGui() {
+    console.error("Gui not supported on 2D features.");
+  }
 }
 
 class TextInput extends Feature {
@@ -205,6 +228,9 @@ class TextInput extends Feature {
       this.text = e.text;
     });
   }
+  createBasicGui() {
+    console.error("Gui not supported on 2D features.");
+  }
 }
 
 class SliderInput extends Feature {
@@ -213,6 +239,9 @@ class SliderInput extends Feature {
     this.on("changed", (e) => {
       this.value = e.value;
     });
+  }
+  createBasicGui() {
+    console.error("Gui not supported on 2D features.");
   }
 }
 class Video extends Feature {
@@ -236,6 +265,9 @@ class Video extends Feature {
       uuid: this.uuid,
     });
   }
+  createBasicGui() {
+    console.error("Gui not supported on 2D features.");
+  }
 }
 
 class Youtube extends Feature {
@@ -258,6 +290,9 @@ class Youtube extends Feature {
       type: "stop",
       uuid: this.uuid,
     });
+  }
+  createBasicGui() {
+    console.error("Gui not supported on 2D features.");
   }
 }
 
@@ -284,6 +319,9 @@ class VidScreen extends Feature {
 
   stop() {
     clearInterval(this._interval);
+  }
+  createBasicGui() {
+    console.error("Gui not supported on 2D features.");
   }
 }
 
