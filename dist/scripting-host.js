@@ -253,6 +253,11 @@ var Audio = /*#__PURE__*/function (_Feature) {
         uuid: this.uuid
       });
     }
+  }, {
+    key: "createBasicGui",
+    value: function createBasicGui() {
+      console.error("Gui not supported on 2D features.");
+    }
   }]);
 
   return Audio;
@@ -319,6 +324,11 @@ var NftImage = /*#__PURE__*/function (_Feature2) {
         return r;
       });
     }
+  }, {
+    key: "createBasicGui",
+    value: function createBasicGui() {
+      console.error("Gui not supported on 2D features.");
+    }
   }]);
 
   return NftImage;
@@ -345,6 +355,13 @@ var TextInput = /*#__PURE__*/function (_Feature3) {
     return _this4;
   }
 
+  _createClass(TextInput, [{
+    key: "createBasicGui",
+    value: function createBasicGui() {
+      console.error("Gui not supported on 2D features.");
+    }
+  }]);
+
   return TextInput;
 }(Feature);
 
@@ -368,6 +385,13 @@ var SliderInput = /*#__PURE__*/function (_Feature4) {
 
     return _this5;
   }
+
+  _createClass(SliderInput, [{
+    key: "createBasicGui",
+    value: function createBasicGui() {
+      console.error("Gui not supported on 2D features.");
+    }
+  }]);
 
   return SliderInput;
 }(Feature);
@@ -408,6 +432,11 @@ var Video = /*#__PURE__*/function (_Feature5) {
         type: "stop",
         uuid: this.uuid
       });
+    }
+  }, {
+    key: "createBasicGui",
+    value: function createBasicGui() {
+      console.error("Gui not supported on 2D features.");
     }
   }]);
 
@@ -450,6 +479,11 @@ var Youtube = /*#__PURE__*/function (_Feature6) {
         type: "stop",
         uuid: this.uuid
       });
+    }
+  }, {
+    key: "createBasicGui",
+    value: function createBasicGui() {
+      console.error("Gui not supported on 2D features.");
     }
   }]);
 
@@ -503,6 +537,11 @@ var VidScreen = /*#__PURE__*/function (_Feature7) {
     key: "stop",
     value: function stop() {
       clearInterval(this._interval);
+    }
+  }, {
+    key: "createBasicGui",
+    value: function createBasicGui() {
+      console.error("Gui not supported on 2D features.");
     }
   }]);
 
@@ -578,11 +617,12 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
 
     this.feature = feature;
     this.uuid = uuid();
-    this.listOfControls = [];
+    this._listOfControls = [];
     this.showing = false;
 
     if (options) {
       if (options.billBoardMode == 0 || // BILLBOARD_NONE
+      options.billBoardMode == 1 || // BILLBOARD_X
       options.billBoardMode == 2 // BILLBOARD_Y
       ) {
         this.billBoardMode = options.billBoardMode;
@@ -600,14 +640,14 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
       var positionInGrid = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [0, 0];
 
       if (!id) {
-        id = "unknown" + this.listOfControls.length + 1;
+        id = "unknown" + this._listOfControls.length + 1;
       }
 
       if (!text) {
         text = "Text";
       }
 
-      var control = new guiControl({
+      var control = new guiControl(this, {
         type: "button",
         id: id,
         text: text,
@@ -618,7 +658,12 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
         return control;
       }
 
-      this.listOfControls.push(control);
+      if (this._listOfControls.length > 15) {
+        this._listOfControls.pop();
+      }
+
+      this._listOfControls.push(control);
+
       return control;
     }
   }, {
@@ -631,7 +676,7 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
         text = "Text";
       }
 
-      var control = new guiControl({
+      var control = new guiControl(this, {
         type: "text",
         text: text,
         positionInGrid: positionInGrid
@@ -641,7 +686,12 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
         return control;
       }
 
-      this.listOfControls.push(control);
+      if (this._listOfControls.length > 15) {
+        this._listOfControls.pop();
+      }
+
+      this._listOfControls.push(control);
+
       return control;
     }
   }, {
@@ -651,8 +701,9 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
       var controlToReplace = this.getControlByPosition(control.positionInGrid);
 
       if (controlToReplace) {
-        var i = this.listOfControls.indexOf(controlToReplace);
-        this.listOfControls[i] = control;
+        var i = this._listOfControls.indexOf(controlToReplace);
+
+        this._listOfControls[i] = control;
         return true;
       }
 
@@ -671,27 +722,48 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
     key: "removeControl",
     value: function removeControl(id) {
       var c = this.getControlById(id);
-      this.listOfControls.splice(this.listOfControls.indexOf(c), 1);
+
+      this._listOfControls.splice(this._listOfControls.indexOf(c), 1);
     }
   }, {
     key: "getControlById",
     value: function getControlById(id) {
-      return this.listOfControls.find(function (control) {
+      return this._listOfControls.find(function (control) {
         return control.id == id;
+      });
+    }
+  }, {
+    key: "getControlByUuid",
+    value: function getControlByUuid(uuid) {
+      return this._listOfControls.find(function (control) {
+        return control.uuid == uuid;
       });
     }
   }, {
     key: "getControlByPosition",
     value: function getControlByPosition(positionInGrid) {
-      return this.listOfControls.find(function (control) {
+      return this._listOfControls.find(function (control) {
         return control.positionInGrid[0] == positionInGrid[0] && control.positionInGrid[1] == positionInGrid[1];
+      });
+    }
+  }, {
+    key: "listOfControls",
+    get: function get() {
+      var _listOfControls = Array.from(this._listOfControls);
+
+      return _listOfControls.map(function (control) {
+        return control.summary;
       });
     }
   }, {
     key: "show",
     value: function show() {
-      if (!this.listOfControls || !this.listOfControls.length) {
-        this.listOfControls[0] = new guiControl(this.defaultControl);
+      if (!this._listOfControls || !this._listOfControls.length) {
+        this._listOfControls[0] = new guiControl(this, this.defaultControl);
+      }
+
+      if (this._listOfControls.length > 15) {
+        this._listOfControls = this._listOfControls.slice(0, 15);
       }
 
       this.feature.parcel.broadcast({
@@ -712,13 +784,8 @@ var FeatureBasicGUI = /*#__PURE__*/function () {
         type: "destroy-feature-gui",
         uuid: this.feature.uuid
       });
-      this.listOfControls = [];
+      this._listOfControls = [];
       this.showing = false;
-    }
-  }, {
-    key: "update",
-    value: function update() {
-      this.show();
     }
   }]);
 
@@ -732,7 +799,7 @@ var guiControl = /*#__PURE__*/function (_EventEmitter) {
 
   var _super = _createSuper(guiControl);
 
-  function guiControl(options) {
+  function guiControl(gui, options) {
     var _this;
 
     _classCallCheck(this, guiControl);
@@ -748,12 +815,38 @@ var guiControl = /*#__PURE__*/function (_EventEmitter) {
       };
     }
 
+    _this.gui = gui;
+    _this.uuid = uuid();
     _this.type = options.type || "text";
     _this.id = options.id;
     _this.text = options.text || "Text";
     _this.positionInGrid = options.positionInGrid || [0, 0];
     return _this;
   }
+
+  _createClass(guiControl, [{
+    key: "summary",
+    get: function get() {
+      return {
+        uuid: this.uuid,
+        type: this.type,
+        id: this.id,
+        text: this.text,
+        positionInGrid: this.positionInGrid
+      };
+    }
+  }, {
+    key: "update",
+    value: function update() {
+      if (this.gui && this.gui.showing) {
+        this.gui.feature.parcel.broadcast({
+          type: "update-feature-gui",
+          uuid: this.feature.uuid,
+          control: this.summary
+        });
+      }
+    }
+  }]);
 
   return guiControl;
 }(EventEmitter);
@@ -32334,8 +32427,12 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
         }
 
         if (f && e.guiTarget && f.gui) {
-          f.gui.getControlById(e.guiTarget).emit("click", e);
-          return;
+          var guiControl = f.gui.getControlByUuid(e.guiTarget);
+
+          if (guiControl) {
+            guiControl.emit("click", e);
+            return;
+          }
         }
 
         !!f && f.emit("click", e);

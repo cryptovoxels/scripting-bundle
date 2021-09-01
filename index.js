@@ -107,8 +107,11 @@ class Parcel extends EventEmitter {
       }
 
       if (f && e.guiTarget && f.gui) {
-        f.gui.getControlById(e.guiTarget).emit("click", e);
-        return;
+        const guiControl = f.gui.getControlByUuid(e.guiTarget);
+        if (guiControl) {
+          guiControl.emit("click", e);
+          return;
+        }
       }
 
       !!f && f.emit("click", e);
@@ -357,7 +360,7 @@ class Parcel extends EventEmitter {
 
     if (i > -1) {
       this.featuresList.splice(i);
-      f.removeGui()
+      f.removeGui();
     }
   }
 
