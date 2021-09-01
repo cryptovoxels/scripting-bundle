@@ -1,7 +1,8 @@
 /* global postMessage */
 
 // const uuid = require('uuid/v4')
-const FeatureBasicGUI = require("./gui.js");
+const FeatureBasicGUI = require("./gui");
+
 const throttle = require("lodash.throttle");
 const EventEmitter = require("events");
 

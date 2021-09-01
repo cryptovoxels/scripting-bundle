@@ -10,6 +10,7 @@ import {
 
 import { Animation } from "@babylonjs/core/Animations/animation";
 const throttle = require("lodash.throttle");
+
 const uuid = require("uuid/v4");
 const EventEmitter = require("events");
 const Feature = require("./feature");
