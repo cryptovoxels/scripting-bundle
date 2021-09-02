@@ -339,6 +339,7 @@ class Parcel extends EventEmitter {
           scale: new Vector3(1, 1, 1),
           type,
           uuid: uuid(),
+          createdByScripting:true,
         },
         description || {}
       )
