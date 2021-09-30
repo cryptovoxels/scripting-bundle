@@ -361,7 +361,7 @@ class Parcel extends EventEmitter {
     const i = this.featuresList.indexOf(f);
 
     if (i > -1) {
-      this.featuresList.splice(i);
+      this.featuresList.splice(i,1);
       f.removeGui();
     }
   }
