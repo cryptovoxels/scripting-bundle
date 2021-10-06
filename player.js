@@ -2,6 +2,7 @@ const EventEmitter = require("events");
 const { throttle } = require("lodash");
 const emojis = require("./helpers.js").emojis;
 const animations = require("./helpers.js").animations;
+
 class Player extends EventEmitter {
   constructor(description, parcel) {
     super();
@@ -46,6 +47,22 @@ class Player extends EventEmitter {
     { leading: true, trailing: false }
   );
 
+  _set(playerInfo=null){
+    if(!playerInfo){
+      return
+    }
+    if(playerInfo.name){
+      this.name = playerInfo.name
+    }
+    if(playerInfo.collectibles){
+      this.collectibles = playerInfo.collectibles
+    }
+  }
+
+  isLoggedIn(){
+    return !!this.wallet && !!this.wallet.match(/^(0x)?[0-9a-f]{40}$/i)  
+  }
+
   teleportTo(coords) {
     if (!coords || coords == "") {
       return;
@@ -71,15 +88,94 @@ class Player extends EventEmitter {
       return c.wearable_id == tokenId && collectionId == collection_id;
     });
   }
+/**
+ * 
+ * @param {string} contract the contract address
+ * @param {string|number} tokenId the token id
+ * @param {(boolean)=>void} successCallback A callback called on success and has a boolean (whether player has NFT or not) as argument
+ * @param {(string)=>void} failCallback Callback called on fail. With a string as arugment (the reason)
+ * @returns 
+ */
+  hasEthereumNFT(contract,tokenId,successCallback=null,failCallback=null){
+    if(!this.isLoggedIn()){
+      return false
+    }
+    if(typeof tokenId !=='number' && typeof tokenId !=='string'){
+      console.error('[Scripting] token id is invalid')
+      return false
+    }
+    if(typeof tokenId =='number'){
+      tokenId=tokenId.toString()
+    }
+
+    if(typeof contract !=='string' || (typeof contract =='string' && contract.substring(0,2)!=='0x')){
+      console.error('[Scripting] contract address is invalid')
+      return false
+    }
+
+    let api_url = `https://api.opensea.io/api/v1/asset/${contract}/${tokenId}?account_address=${this.wallet}`;
+    let promise;
+    if (typeof global == "undefined" || !global.fetchJson) {
+      /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
+      promise = fetch(api_url).then((r) => r.json());
+    } else {
+      promise = fetchJson(api_url);
+    }
+
+    promise.then((r) => {
+      if(!r){
+        failCallback && failCallback('no data by opensea, try again later')
+        return false
+      }
+      let ownsAsset =true // default is true
+      if(!r.ownership){
+        // Opensea sends empty ownership when not owner
+        ownsAsset = false
+      }
+      if(ownsAsset && !r.ownership.owner){
+        ownsAsset = false
+      }
+
+      if(ownsAsset){
+        ownsAsset = r.ownership.owner.address.toLowerCase() == this.wallet.toLowerCase()
+      }
+
+      if (successCallback) {
+        successCallback(ownsAsset);
+      }else{
+        console.error('[Scripting] No callback given to "hasEthereumNFT"')
+        console.log(`[Scripting] hasNFT = ${ownsAsset}`)
+      }
+      return ownsAsset
+    }).catch((e)=>{
+      failCallback && failCallback('error fetching the data')
+      console.error('[Scripting]',e)
+    });
+  }
 
   get isAnonymous() {
-    return this.name.toLowerCase() == "Anonymous".toLowerCase();
+    return !!this.isLoggedIn()
   }
 
   onMove(msg) {
     this.position.set(msg.position[0], msg.position[1], msg.position[2]);
     this.rotation.set(msg.rotation[0], msg.rotation[1], msg.rotation[2]);
     this.emit("move", msg);
+  }
+
+  kick(reason=null){
+    if(this.wallet == this.parcel.owner){
+      console.log('[Scripting] Cannot kick the owner')
+      return
+    }
+    if(this.uuid){
+      this.parcel.broadcast({
+        type: "player-kick",
+        uuid: this.uuid,
+        reason:reason
+      });
+    }
+
   }
 }
 
