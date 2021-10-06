@@ -222,13 +222,13 @@ class NftImage extends Feature {
     }
   );
 
-  _getNftData(callback = null) {
+  _getNftData(callback = null,account_address=null) {
     if (!this._content.url) {
       return null;
     }
     let contract = this._content.url.split("/")[4];
     let token = this._content.url.split("/")[5];
-    const api_url = `https://img.cryptovoxels.com/node/opensea?contract=${contract}&token=${token}&force_update=1`;
+    const api_url = `https://img.cryptovoxels.com/node/opensea?contract=${contract}&token=${token}&force_update=1${account_address!==null?`&account_address=${account_address}`:''}`;
     let promise;
     if (typeof global == "undefined" || !global.fetchJson) {
       /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
@@ -239,12 +239,14 @@ class NftImage extends Feature {
     return promise.then((r) => {
       if (callback) {
         callback(r);
+      }else{
+        console.error('[Scripting] No callback given to "getNftData"')
       }
       return r;
-    });
+    }).catch((e)=>console.error('[Scripting]',e));
   }
   createBasicGui() {
-    console.error("Gui not supported on 2D features.");
+    console.error("[Scripting] Gui not supported on 2D features.");
   }
 }
 
@@ -256,7 +258,7 @@ class TextInput extends Feature {
     });
   }
   createBasicGui() {
-    console.error("Gui not supported on 2D features.");
+    console.error("[Scripting] Gui not supported on 2D features.");
   }
 }
 
@@ -268,7 +270,7 @@ class SliderInput extends Feature {
     });
   }
   createBasicGui() {
-    console.error("Gui not supported on 2D features.");
+    console.error("[Scripting] Gui not supported on 2D features.");
   }
 }
 class Video extends Feature {
@@ -293,7 +295,7 @@ class Video extends Feature {
     });
   }
   createBasicGui() {
-    console.error("Gui not supported on 2D features.");
+    console.error("[Scripting] Gui not supported on 2D features.");
   }
 }
 
@@ -319,7 +321,7 @@ class Youtube extends Feature {
     });
   }
   createBasicGui() {
-    console.error("Gui not supported on 2D features.");
+    console.error("[Scripting] Gui not supported on 2D features.");
   }
 }
 
@@ -348,7 +350,7 @@ class VidScreen extends Feature {
     clearInterval(this._interval);
   }
   createBasicGui() {
-    console.error("Gui not supported on 2D features.");
+    console.error("[Scripting] Gui not supported on 2D features.");
   }
 }
 

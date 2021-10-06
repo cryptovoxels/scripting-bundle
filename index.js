@@ -59,6 +59,9 @@ class Parcel extends EventEmitter {
     this.id = id;
     this.players = [];
     this.featuresList = [];
+    this._allowedUsers = []
+    this._isPrivate = false 
+    this._allowLoggedInOnly = false 
   }
 
   listen(port) {}
@@ -156,7 +159,29 @@ class Parcel extends EventEmitter {
     let p = this.players.find(
       (p) => p.wallet === player.wallet && p.uuid === player.uuid
     );
+
+    let isAllowed = this.isWalletAllowedIfPrivate(player.wallet)
+    if(!isAllowed){
+      console.log('[Scripting] Wallet Not allowed in parcel')
+      // if user is not allowed in parcel kick him.
+      let tmpPlayer = player instanceof Player ? player : new Player(player, this)
+      tmpPlayer.kick(`Parcel ${this.id} is private and you're not allowed by the owner.`)
+      return
+    }
+    
+    if (this.allowLoggedInOnly){
+      let tmpPlayer = player instanceof Player ? player : new Player(player, this)
+
+      if(!tmpPlayer.isLoggedIn()){
+        console.log('[Scripting] non-logged in users not allowed in parcel')
+        tmpPlayer.kick(`Parcel ${this.id} only allows signed-in users.`)
+        return
+      }
+
+    }
+
     if (p) {
+      p._set(player)
       return;
     }
     this.emit("playerenter", {
@@ -211,6 +236,7 @@ class Parcel extends EventEmitter {
 
   parse(parcel) {
     Object.assign(this, parcel); // Create features array
+    this._allowedUsers=parcel.contributors||[]
     this.featuresList = Array.from(parcel.features).map(
       (f) => !!f && Feature.create(this, f)
     );
@@ -218,11 +244,17 @@ class Parcel extends EventEmitter {
   }
 
   getPlayerByUuid(uuid) {
+    if(typeof uuid !=='string'){
+      return
+    }
     return this.players.find((p) => p.uuid === uuid);
   }
 
   getPlayerByWallet(wallet) {
-    return this.players.find((p) => p.wallet === wallet);
+    if(typeof wallet !=='string'){
+      return
+    }
+    return this.players.find((p) => p.wallet.toLowerCase() === wallet.toLowerCase());
   }
 
   getFeatureByUuid(uuid) {
@@ -290,22 +322,22 @@ class Parcel extends EventEmitter {
 
   _setSnapshot(snapshot_id) {
     if (!this.snapshots) {
-      console.error("Call parcel.fetchSnapshots first");
+      console.error("[Scripting] Call parcel.fetchSnapshots first");
       return;
     }
     if (this.snapshots.length == 0) {
-      console.error("No snapshots for this parcel");
+      console.error("[Scripting] No snapshots for this parcel");
       return;
     }
     const snapshot = this.snapshots.find((s) => s.id == snapshot_id);
 
     if (!snapshot) {
-      console.error("Could not find snapshot given ID");
+      console.error("[Scripting] Could not find snapshot given ID");
       return;
     }
 
     if (!("content" in snapshot) || snapshot.is_snapshot !== true) {
-      console.error("Not a valid snapshot");
+      console.error("[Scripting] Not a valid snapshot");
       return;
     }
 
@@ -404,6 +436,103 @@ class Parcel extends EventEmitter {
         this.join(ws.player);
       }
     };
+  }
+
+  /* Section to make parcels more elitist*/
+  get isPrivate(){
+    return this._isPrivate
+  }  
+  set isPrivate(state){
+    if(typeof state=='boolean'){
+    this._isPrivate = state
+    if(state){
+      // if we switched it to true, then kick out all the players not allowed.
+      this.players.forEach((player)=>{
+        
+        if(!this.isWalletAllowedIfPrivate(player.wallet)){
+          // Player not allowed
+            player.kick(`Parcel ${this.id} switched to private mode and you're not in the allowed list.`)
+          
+        }
+
+      })
+
+    }
+    }else{
+      console.error(['[Scripting] isPrivate is a boolean'])
+    }
+  }
+
+  get allowLoggedInOnly(){
+    return this._allowLoggedInOnly
+  }  
+  set allowLoggedInOnly(state){
+    if(typeof state=='boolean'){
+      this._allowLoggedInOnly = state
+    }else{
+      console.error(['[Scripting] allowLoggedInOnly is a boolean'])
+    }
+
+  }
+
+  get allowedWallets(){
+    return this._allowedUsers || []
+  }
+
+  allow(wallet){
+    if(typeof wallet !== 'string' && typeof wallet !== 'object'){
+      console.log('[Scripting] wallet has to be a string or and array')
+      return
+    }
+    if(Array.isArray(wallet)){
+      wallet.forEach((w)=>{
+        if(typeof w == 'string' && this.allowedWallets.indexOf(wallet)==-1){
+          this._allowedUsers.push(w.toLowerCase())
+        }
+        
+      })
+      return
+    }
+    // Wallet is a string:
+    if(this._allowedUsers.indexOf(wallet.toLowerCase())!=-1){
+      console.log('[Scripting] Wallet already allowed')
+      return
+    }
+    this._allowedUsers.push(wallet.toLowerCase())
+  }
+  disallow(wallet){
+    if(typeof wallet !== 'string'){
+      console.log('[Scripting] wallet has to be a string')
+      return
+    }
+    if(wallet.toLowerCase() == (this.owner ? this.owner.toLowerCase():'')){
+      console.log('[Scripting] Cannot disallow owner')
+      return
+    }
+
+    let index = this._allowedUsers.indexOf(wallet.toLowerCase())
+
+    if(index==-1){
+      return
+    }
+    this._allowedUsers.splice(index,1)
+    let player = this.getPlayerByWallet(wallet)
+    if(player){
+      player.kick(`You've been removed from the allowed list of Parcel ${this.id} `)
+    }
+  }
+
+  isWalletAllowedIfPrivate(wallet){
+    if(!this.isPrivate){
+      return true
+    }
+    if(typeof wallet !=='string'){
+      return false
+    }
+    if(wallet.toLowerCase() === this.owner.toLowerCase()){
+      return true
+    }
+    return this._allowedUsers.indexOf(wallet.toLowerCase())!==-1
   }
 }
 class Space extends Parcel {

@@ -329,6 +329,7 @@ var NftImage = /*#__PURE__*/function (_Feature2) {
     key: "_getNftData",
     value: function _getNftData() {
       var callback = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var account_address = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
       if (!this._content.url) {
         return null;
@@ -338,7 +339,7 @@ var NftImage = /*#__PURE__*/function (_Feature2) {
 
       var token = this._content.url.split("/")[5];
 
-      var api_url = "https://img.cryptovoxels.com/node/opensea?contract=".concat(contract, "&token=").concat(token, "&force_update=1");
+      var api_url = "https://img.cryptovoxels.com/node/opensea?contract=".concat(contract, "&token=").concat(token, "&force_update=1").concat(account_address !== null ? "&account_address=".concat(account_address) : '');
       var promise;
 
       if (typeof __webpack_require__.g == "undefined" || !__webpack_require__.g.fetchJson) {
@@ -353,15 +354,19 @@ var NftImage = /*#__PURE__*/function (_Feature2) {
       return promise.then(function (r) {
         if (callback) {
           callback(r);
+        } else {
+          console.error('[Scripting] No callback given to "getNftData"');
         }
 
         return r;
+      })["catch"](function (e) {
+        return console.error('[Scripting]', e);
       });
     }
   }, {
     key: "createBasicGui",
     value: function createBasicGui() {
-      console.error("Gui not supported on 2D features.");
+      console.error("[Scripting] Gui not supported on 2D features.");
     }
   }]);
 
@@ -392,7 +397,7 @@ var TextInput = /*#__PURE__*/function (_Feature3) {
   _createClass(TextInput, [{
     key: "createBasicGui",
     value: function createBasicGui() {
-      console.error("Gui not supported on 2D features.");
+      console.error("[Scripting] Gui not supported on 2D features.");
     }
   }]);
 
@@ -423,7 +428,7 @@ var SliderInput = /*#__PURE__*/function (_Feature4) {
   _createClass(SliderInput, [{
     key: "createBasicGui",
     value: function createBasicGui() {
-      console.error("Gui not supported on 2D features.");
+      console.error("[Scripting] Gui not supported on 2D features.");
     }
   }]);
 
@@ -470,7 +475,7 @@ var Video = /*#__PURE__*/function (_Feature5) {
   }, {
     key: "createBasicGui",
     value: function createBasicGui() {
-      console.error("Gui not supported on 2D features.");
+      console.error("[Scripting] Gui not supported on 2D features.");
     }
   }]);
 
@@ -517,7 +522,7 @@ var Youtube = /*#__PURE__*/function (_Feature6) {
   }, {
     key: "createBasicGui",
     value: function createBasicGui() {
-      console.error("Gui not supported on 2D features.");
+      console.error("[Scripting] Gui not supported on 2D features.");
     }
   }]);
 
@@ -575,7 +580,7 @@ var VidScreen = /*#__PURE__*/function (_Feature7) {
   }, {
     key: "createBasicGui",
     value: function createBasicGui() {
-      console.error("Gui not supported on 2D features.");
+      console.error("[Scripting] Gui not supported on 2D features.");
     }
   }]);
 
@@ -1037,6 +1042,28 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
   }
 
   _createClass(Player, [{
+    key: "_set",
+    value: function _set() {
+      var playerInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (!playerInfo) {
+        return;
+      }
+
+      if (playerInfo.name) {
+        this.name = playerInfo.name;
+      }
+
+      if (playerInfo.collectibles) {
+        this.collectibles = playerInfo.collectibles;
+      }
+    }
+  }, {
+    key: "isLoggedIn",
+    value: function isLoggedIn() {
+      return !!this.wallet && !!this.wallet.match(/^(0x)?[0-9a-f]{40}$/i);
+    }
+  }, {
     key: "teleportTo",
     value: function teleportTo(coords) {
       var _this2 = this;
@@ -1069,10 +1096,92 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
         return c.wearable_id == tokenId && collectionId == collection_id;
       });
     }
+    /**
+     * 
+     * @param {string} contract the contract address
+     * @param {string|number} tokenId the token id
+     * @param {(boolean)=>void} successCallback A callback called on success and has a boolean (whether player has NFT or not) as argument
+     * @param {(string)=>void} failCallback Callback called on fail. With a string as arugment (the reason)
+     * @returns 
+     */
+
+  }, {
+    key: "hasEthereumNFT",
+    value: function hasEthereumNFT(contract, tokenId) {
+      var _this3 = this;
+
+      var successCallback = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+      var failCallback = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+
+      if (!this.isLoggedIn()) {
+        return false;
+      }
+
+      if (typeof tokenId !== 'number' && typeof tokenId !== 'string') {
+        console.error('[Scripting] token id is invalid');
+        return false;
+      }
+
+      if (typeof tokenId == 'number') {
+        tokenId = tokenId.toString();
+      }
+
+      if (typeof contract !== 'string' || typeof contract == 'string' && contract.substring(0, 2) !== '0x') {
+        console.error('[Scripting] contract address is invalid');
+        return false;
+      }
+
+      var api_url = "https://api.opensea.io/api/v1/asset/".concat(contract, "/").concat(tokenId, "?account_address=").concat(this.wallet);
+      var promise;
+
+      if (typeof __webpack_require__.g == "undefined" || !__webpack_require__.g.fetchJson) {
+        /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
+        promise = fetch(api_url).then(function (r) {
+          return r.json();
+        });
+      } else {
+        promise = fetchJson(api_url);
+      }
+
+      console.error('[Scripting] we have a promise?');
+      promise.then(function (r) {
+        if (!r) {
+          failCallback && failCallback('no data by opensea, try again later');
+          return false;
+        }
+
+        var ownsAsset = true; // default is true
+
+        if (!r.ownership) {
+          // Opensea sends empty ownership when not owner
+          ownsAsset = false;
+        }
+
+        if (ownsAsset && !r.ownership.owner) {
+          ownsAsset = false;
+        }
+
+        if (ownsAsset) {
+          ownsAsset = r.ownership.owner.address.toLowerCase() == _this3.wallet.toLowerCase();
+        }
+
+        if (successCallback) {
+          successCallback(ownsAsset);
+        } else {
+          console.error('[Scripting] No callback given to "hasEthereumNFT"');
+          console.log("[Scripting] hasNFT = ".concat(ownsAsset));
+        }
+
+        return ownsAsset;
+      })["catch"](function (e) {
+        failCallback && failCallback('error fetching the data');
+        console.error('[Scripting]', e);
+      });
+    }
   }, {
     key: "isAnonymous",
     get: function get() {
-      return this.name.toLowerCase() == "Anonymous".toLowerCase();
+      return !!this.isLoggedIn();
     }
   }, {
     key: "onMove",
@@ -1080,6 +1189,24 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
       this.position.set(msg.position[0], msg.position[1], msg.position[2]);
       this.rotation.set(msg.rotation[0], msg.rotation[1], msg.rotation[2]);
       this.emit("move", msg);
+    }
+  }, {
+    key: "kick",
+    value: function kick() {
+      var reason = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (this.wallet == this.parcel.owner) {
+        console.log('[Scripting] Cannot kick the owner');
+        return;
+      }
+
+      if (this.uuid) {
+        this.parcel.broadcast({
+          type: "player-kick",
+          uuid: this.uuid,
+          reason: reason
+        });
+      }
     }
   }]);
 
@@ -32623,6 +32750,9 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
     _this.id = id;
     _this.players = [];
     _this.featuresList = [];
+    _this._allowedUsers = [];
+    _this._isPrivate = false;
+    _this._allowLoggedInOnly = false;
     return _this;
   }
 
@@ -32734,8 +32864,31 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
       var p = this.players.find(function (p) {
         return p.wallet === player.wallet && p.uuid === player.uuid;
       });
+      var isAllowed = this.isWalletAllowedIfPrivate(player.wallet);
+
+      if (!isAllowed) {
+        console.log('[Scripting] Wallet Not allowed in parcel'); // if user is not allowed in parcel kick him.
+
+        var tmpPlayer = player instanceof Player ? player : new Player(player, this);
+        tmpPlayer.kick("Parcel ".concat(this.id, " is private and you're not allowed by the owner."));
+        return;
+      }
+
+      if (this.allowLoggedInOnly) {
+        var _tmpPlayer = player instanceof Player ? player : new Player(player, this);
+
+        if (!_tmpPlayer.isLoggedIn()) {
+          console.log('[Scripting] non-logged in users not allowed in parcel');
+
+          _tmpPlayer.kick("Parcel ".concat(this.id, " only allows signed-in users."));
+
+          return;
+        }
+      }
 
       if (p) {
+        p._set(player);
+
         return;
       }
 
@@ -32793,6 +32946,7 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
 
       Object.assign(this, parcel); // Create features array
 
+      this._allowedUsers = parcel.contributors || [];
       this.featuresList = Array.from(parcel.features).map(function (f) {
         return !!f && Feature.create(_this2, f);
       });
@@ -32801,6 +32955,10 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
   }, {
     key: "getPlayerByUuid",
     value: function getPlayerByUuid(uuid) {
+      if (typeof uuid !== 'string') {
+        return;
+      }
+
       return this.players.find(function (p) {
         return p.uuid === uuid;
       });
@@ -32808,8 +32966,12 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
   }, {
     key: "getPlayerByWallet",
     value: function getPlayerByWallet(wallet) {
+      if (typeof wallet !== 'string') {
+        return;
+      }
+
       return this.players.find(function (p) {
-        return p.wallet === wallet;
+        return p.wallet.toLowerCase() === wallet.toLowerCase();
       });
     }
   }, {
@@ -32999,6 +33161,120 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
           _this4.join(ws.player);
         }
       };
+    }
+    /* Section to make parcels more elitist*/
+
+  }, {
+    key: "isPrivate",
+    get: function get() {
+      return this._isPrivate;
+    },
+    set: function set(state) {
+      var _this5 = this;
+
+      if (typeof state == 'boolean') {
+        this._isPrivate = state;
+
+        if (state) {
+          // if we switched it to true, then kick out all the players not allowed.
+          this.players.forEach(function (player) {
+            if (!_this5.isWalletAllowedIfPrivate(player.wallet)) {
+              // Player not allowed
+              player.kick("Parcel ".concat(_this5.id, " switched to private mode and you're not in the allowed list."));
+            }
+          });
+        }
+      } else {
+        console.error(['[Scripting] isPrivate is a boolean']);
+      }
+    }
+  }, {
+    key: "allowLoggedInOnly",
+    get: function get() {
+      return this._allowLoggedInOnly;
+    },
+    set: function set(state) {
+      if (typeof state == 'boolean') {
+        this._allowLoggedInOnly = state;
+      } else {
+        console.error(['[Scripting] allowLoggedInOnly is a boolean']);
+      }
+    }
+  }, {
+    key: "allowedWallets",
+    get: function get() {
+      return this._allowedUsers || [];
+    }
+  }, {
+    key: "allow",
+    value: function allow(wallet) {
+      var _this6 = this;
+
+      if (typeof wallet !== 'string' && _typeof(wallet) !== 'object') {
+        console.log('[Scripting] wallet has to be a string or and array');
+        return;
+      }
+
+      if (Array.isArray(wallet)) {
+        wallet.forEach(function (w) {
+          if (typeof w == 'string' && _this6.allowedWallets.indexOf(wallet) == -1) {
+            _this6._allowedUsers.push(w.toLowerCase());
+          }
+        });
+        return;
+      } // Wallet is a string:
+
+
+      if (this._allowedUsers.indexOf(wallet.toLowerCase()) != -1) {
+        console.log('[Scripting] Wallet already allowed');
+        return;
+      }
+
+      this._allowedUsers.push(wallet.toLowerCase());
+    }
+  }, {
+    key: "disallow",
+    value: function disallow(wallet) {
+      if (typeof wallet !== 'string') {
+        console.log('[Scripting] wallet has to be a string');
+        return;
+      }
+
+      if (wallet.toLowerCase() == (this.owner ? this.owner.toLowerCase() : '')) {
+        console.log('[Scripting] Cannot disallow owner');
+        return;
+      }
+
+      var index = this._allowedUsers.indexOf(wallet.toLowerCase());
+
+      if (index == -1) {
+        return;
+      }
+
+      this._allowedUsers.splice(index, 1);
+
+      var player = this.getPlayerByWallet(wallet);
+
+      if (player) {
+        player.kick("You've been removed from the allowed list of Parcel ".concat(this.id, " "));
+      }
+    }
+  }, {
+    key: "isWalletAllowedIfPrivate",
+    value: function isWalletAllowedIfPrivate(wallet) {
+      if (!this.isPrivate) {
+        return true;
+      }
+
+      if (typeof wallet !== 'string') {
+        return false;
+      }
+
+      if (wallet.toLowerCase() === this.owner.toLowerCase()) {
+        return true;
+      }
+
+      return this._allowedUsers.indexOf(wallet.toLowerCase()) !== -1;
     }
   }]);
 
