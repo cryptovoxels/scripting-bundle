@@ -39,7 +39,7 @@ class VoxelField {
   }
 
   serialize() {
-    console.log("Not implemented");
+    console.log("[Scripting] Not implemented");
     /*
      const buffer = Buffer.from(this.field.data.buffer)
     const deflated = zlib.deflateSync(buffer)

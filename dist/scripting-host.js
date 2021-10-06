@@ -32,6 +32,10 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 // const uuid = require('uuid/v4')
 var FeatureBasicGUI = __webpack_require__(163);
 
+var _require = __webpack_require__(622),
+    _validateObject = _require._validateObject,
+    _isValidProperty = _require._isValidProperty;
+
 var throttle = __webpack_require__(96);
 
 var EventEmitter = __webpack_require__(187);
@@ -51,7 +55,8 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
     _this = _super.call(this);
     _this.metadata = {};
     _this.parcel = parcel;
-    _this.uuid = obj.uuid;
+    _this._type = obj.type;
+    _this._uuid = obj.uuid;
     _this._content = obj;
     _this.gui = null;
     var mutated = throttle(function () {
@@ -77,6 +82,11 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
     var handler = function handler(attr) {
       return {
         set: function set(target, key, value) {
+          if (typeof value !== 'number') {
+            console.error("[Scripting] ".concat(key, " is not a number"));
+            return;
+          }
+
           target[key] = value;
           mutated();
           return value;
@@ -97,6 +107,11 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
   }
 
   _createClass(Feature, [{
+    key: "uuid",
+    get: function get() {
+      return this._uuid;
+    }
+  }, {
     key: "id",
     get: function get() {
       return this._content.id;
@@ -104,12 +119,22 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
   }, {
     key: "type",
     get: function get() {
-      return this._content.type;
+      return this._type;
     }
   }, {
     key: "description",
     get: function get() {
       return this._content;
+    }
+  }, {
+    key: "url",
+    get: function get() {
+      return this._content.url;
+    },
+    set: function set(uri) {
+      this.set({
+        "url": uri
+      });
     }
   }, {
     key: "get",
@@ -119,19 +144,21 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
   }, {
     key: "getSummary",
     value: function getSummary() {
-      return "position: ".concat(this.position.toArray());
+      return "position: ".concat(this.position.toArray(), "; rotaton: ").concat(this.rotation.toArray(), ";  scale: ").concat(this.scale.toArray(), ";");
     }
   }, {
     key: "set",
     value: function set(dict) {
-      Object.assign(this._content, dict);
-      var keys = Array.from(Object.keys(dict)) || [];
+      var d = _validateObject(dict);
+
+      Object.assign(this._content, d);
+      var keys = Array.from(Object.keys(d)) || [];
 
       if (keys.includes("position") || keys.includes("scale") || keys.includes("rotation")) {
         this.updateVectors();
       }
 
-      this.save(dict);
+      this.save(d);
     }
   }, {
     key: "updateVectors",
@@ -155,11 +182,18 @@ var Feature = /*#__PURE__*/function (_EventEmitter) {
   }, {
     key: "save",
     value: function save(dict) {
+      var d = _validateObject(dict);
+
       this.parcel.broadcast({
         type: "update",
         uuid: this.uuid,
-        content: dict
+        content: d
       });
+    }
+  }, {
+    key: "help",
+    value: function help() {
+      console.log("[Scripting] Visit https://wiki.cryptovoxels.com/features/".concat(this.type, " for scripting help on this feature"));
     }
   }, {
     key: "createAnimation",
@@ -1056,6 +1090,210 @@ module.exports = Player;
 
 /***/ }),
 
+/***/ 622:
+/***/ ((module) => {
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+// We're not using typescript but we can at least pretend ;)
+var types = _defineProperty({
+  url: 'string',
+  uuid: 'string',
+  id: 'string',
+  script: 'string',
+
+  /* objects */
+  position: 'object',
+  rotation: 'object',
+  scale: 'object',
+  tryPosition: 'object',
+  tryRotation: 'object',
+  tryScale: 'object',
+  tryable: 'boolean',
+
+  /* back to normal stuff */
+  collidable: 'boolean',
+  isTrigger: 'boolean',
+  proximityToTrigger: 'number',
+  blendMode: 'string',
+  opacity: 'number',
+  inverted: 'boolean',
+  triggerIsAudible: 'boolean',
+  link: 'string',
+  fontSize: 'string',
+  color: 'string',
+  background: 'string',
+  text: 'string',
+  updateDaily: 'boolean',
+  stretch: 'boolean',
+
+  /* media */
+  autoplay: 'boolean',
+  loop: 'boolean',
+  rolloffFactor: 'number',
+  volume: 'number',
+  screenRatio: 'string',
+
+  /* nftimage */
+  hasGui: 'boolean',
+  hasGuiResizable: 'boolean',
+  hasFrame: 'boolean',
+  emissiveColorIntensity: 'number',
+  // transparent:'string', // transparency can be both string or boolean, kinda stupid but ok
+  sprite: 'boolean',
+  streaming: 'boolean',
+
+  /* particle emitters */
+  emitRate: 'number',
+  minSize: 'number',
+  maxSize: 'number',
+  color1: 'string',
+  color2: 'string',
+  colorDead: 'string',
+  opacityDead: 'string,',
+  placeholder: 'string',
+
+  /* slider */
+  minimum: 'number',
+  maximum: 'number',
+  "default": 'number'
+}, "text", 'string');
+
+var arrayProperties = {
+  position: ['number', 'number', 'number'],
+  rotation: ['number', 'number', 'number'],
+  scale: ['number', 'number', 'number'],
+  tryPosition: ['number', 'number', 'number'],
+  tryRotation: ['number', 'number', 'number'],
+  tryScale: ['number', 'number', 'number']
+};
+
+function _isValidArray(array) {
+  var expectedLength = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 3;
+  var type = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+  if (Array.isArray(array)) {
+    if (array.length == expectedLength) {
+      if (type) {
+        // same length and type define, check each value
+        var pass = true;
+        array.forEach(function (v) {
+          if (_typeof(v) !== type) {
+            pass = false;
+          }
+        });
+        return pass;
+      } // same length and no type defined, we pass the validation
+
+
+      return true;
+    } // is array and not same length
+
+
+    return false;
+  } // is not array
+
+
+  return false;
+}
+
+function _isValidProperty(value) {
+  var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+  if (!type) {
+    return true;
+  }
+
+  if (_typeof(value) == type) {
+    return true;
+  }
+
+  return false;
+}
+
+function _validateObject(object) {
+  var resultDict = {};
+  Object.entries(object).forEach(function (_ref) {
+    var _ref2 = _slicedToArray(_ref, 2),
+        dictKey = _ref2[0],
+        value = _ref2[1];
+
+    var currentProperty = Object.keys(types).find(function (key) {
+      return key == dictKey;
+    }); // We found a property with same name
+
+    if (currentProperty) {
+      // If the type of value is appropriate add in to the resultDict
+      if (_isValidProperty(value, types[currentProperty])) {
+        switch (_typeof(value)) {
+          case 'object':
+            // We have an object, check if we're dealing with position,scale,rotation
+            var is3DProperty = Object.keys(arrayProperties).find(function (key) {
+              return key == dictKey;
+            });
+
+            if (is3DProperty) {
+              // we have position,scale or rotation or another array
+              var isValid = _isValidArray(object[currentProperty], arrayProperties[currentProperty].length, 'number');
+
+              if (isValid) {
+                resultDict[currentProperty] = value;
+              } else {
+                console.error("[Scripting]".concat(currentProperty, " should be of type array of length 3"));
+              }
+            } else {
+              // it's just an object;
+              resultDict[dictKey] = value;
+            }
+
+            break;
+
+          default:
+            // just add
+            resultDict[dictKey] = value;
+        }
+      } else {
+        var _is3DProperty = Object.keys(arrayProperties).find(function (key) {
+          return key == currentProperty;
+        });
+
+        if (_is3DProperty) {
+          console.error("[Scripting] ".concat(currentProperty, " should be of type array of length 3"));
+        } else {
+          console.error("[Scripting] ".concat(currentProperty, " should be of type ").concat(types[currentProperty]));
+        }
+      }
+    } else {
+      // We found no type for that key,
+      // key was probably mispecified or it's on purpose, do nothing
+      // just add
+      resultDict[dictKey] = value;
+    }
+  });
+  return resultDict;
+}
+
+module.exports = {
+  _validateObject: _validateObject,
+  _isValidProperty: _isValidProperty
+};
+
+/***/ }),
+
 /***/ 952:
 /***/ ((module) => {
 
@@ -1114,7 +1352,7 @@ var VoxelField = /*#__PURE__*/function () {
   }, {
     key: "serialize",
     value: function serialize() {
-      console.log("Not implemented");
+      console.log("[Scripting] Not implemented");
       /*
        const buffer = Buffer.from(this.field.data.buffer)
       const deflated = zlib.deflateSync(buffer)
@@ -32333,13 +32571,13 @@ if (G) {
       var t = time;
 
       if (isNaN(parseInt(time, 10))) {
-        console.error("setInterval interval is invalid");
+        console.error("[Scripting] setInterval interval is invalid");
         return;
       }
 
       if (parseInt(time, 10) < 30) {
         t = 30;
-        console.log("setInterval minimum is 30ms");
+        console.log("[Scripting] setInterval minimum is 30ms");
       }
 
       for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -32421,7 +32659,7 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
         }
 
         if (!f && !player) {
-          console.log("cant find feature or player " + msg.uuid);
+          console.log("[Scripting] Cant find feature or player " + msg.uuid);
           return;
         }
 
@@ -32451,7 +32689,7 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
         var _f = this.getFeatureByUuid(msg.uuid);
 
         if (!_f) {
-          console.log("cant find feature " + msg.uuid);
+          console.log("[Scripting] Cant find feature " + msg.uuid);
           return;
         }
 
@@ -32711,7 +32949,7 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
       var i = this.featuresList.indexOf(f);
 
       if (i > -1) {
-        this.featuresList.splice(i);
+        this.featuresList.splice(i, 1);
         f.removeGui();
       }
     }

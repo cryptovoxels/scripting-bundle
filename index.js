@@ -38,12 +38,12 @@ if (G) {
     return function (func, time, ...args) {
       let t = time;
       if (isNaN(parseInt(time, 10))) {
-        console.error("setInterval interval is invalid");
+        console.error("[Scripting] setInterval interval is invalid");
         return;
       }
       if (parseInt(time, 10) < 30) {
         t = 30;
-        console.log("setInterval minimum is 30ms");
+        console.log("[Scripting] setInterval minimum is 30ms");
       }
       return setInterval.call(G, func, t, ...args);
     };
@@ -89,7 +89,7 @@ class Parcel extends EventEmitter {
       }
 
       if (!f && !player) {
-        console.log("cant find feature or player " + msg.uuid);
+        console.log("[Scripting] Cant find feature or player " + msg.uuid);
         return;
       }
 
@@ -121,7 +121,7 @@ class Parcel extends EventEmitter {
       const f = this.getFeatureByUuid(msg.uuid);
 
       if (!f) {
-        console.log("cant find feature " + msg.uuid);
+        console.log("[Scripting] Cant find feature " + msg.uuid);
         return;
       }
 

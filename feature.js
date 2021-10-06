@@ -2,7 +2,7 @@
 
 // const uuid = require('uuid/v4')
 const FeatureBasicGUI = require("./gui");
-
+const {_validateObject,_isValidProperty } = require("./validation-helpers")
 const throttle = require("lodash.throttle");
 const EventEmitter = require("events");
 
@@ -11,7 +11,8 @@ class Feature extends EventEmitter {
     super();
     this.metadata = {};
     this.parcel = parcel;
-    this.uuid = obj.uuid;
+    this._type = obj.type
+    this._uuid = obj.uuid;
     this._content = obj;
     this.gui = null;
     const mutated = throttle(
@@ -39,6 +40,10 @@ class Feature extends EventEmitter {
 
     const handler = (attr) => ({
       set(target, key, value) {
+        if(typeof value!=='number'){
+          console.error(`[Scripting] ${key} is not a number`)
+          return
+        }
         target[key] = value;
         mutated();
         return value;
@@ -52,24 +57,41 @@ class Feature extends EventEmitter {
     this.scale = new Proxy(this._scale, handler("scale"));
     this.updateVectors();
   }
+
+  get uuid() {
+    return this._uuid;
+  }
+
   get id() {
     return this._content.id;
   }
+
   get type() {
-    return this._content.type;
+    return this._type
   }
+
   get description() {
     return this._content;
   }
+
+  get url() {
+    return this._content.url;
+  }
+
+  set url(uri) {
+    this.set({"url":uri});
+  }
+
   get(key) {
     return this._content[key];
   }
   getSummary() {
-    return `position: ${this.position.toArray()}`;
+    return `position: ${this.position.toArray()}; rotaton: ${this.rotation.toArray()};  scale: ${this.scale.toArray()};`;
   }
   set(dict) {
-    Object.assign(this._content, dict);
-    let keys = Array.from(Object.keys(dict)) || [];
+    let d = _validateObject(dict)
+    Object.assign(this._content, d);
+    let keys = Array.from(Object.keys(d)) || [];
     if (
       keys.includes("position") ||
       keys.includes("scale") ||
@@ -77,7 +99,7 @@ class Feature extends EventEmitter {
     ) {
       this.updateVectors();
     }
-    this.save(dict);
+    this.save(d);
   }
   updateVectors() {
     this._position.set(
@@ -105,11 +127,16 @@ class Feature extends EventEmitter {
     return c;
   }
   save(dict) {
+    let d = _validateObject(dict)
     this.parcel.broadcast({
       type: "update",
       uuid: this.uuid,
-      content: dict,
+      content: d,
     });
+  }
+
+  help(){
+    console.log(`[Scripting] Visit https://wiki.cryptovoxels.com/features/${this.type} for scripting help on this feature`)
   }
 
   createAnimation(key) {

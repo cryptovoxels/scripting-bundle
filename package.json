@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack --config webpack.config.js",
+    "copy:cryptovoxels": "cp ./dist/scripting-host.js ../cryptovoxels/dist/scripting-host.js",
+    "copy:grid": "cp ./dist/scripting-host.js ../grid/scripting-host.js",
     "build:min": "webpack --config webpack-min.config.js",
     "test": "babel-tape-runner tests/*.js && standard"
   },
