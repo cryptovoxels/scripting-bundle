@@ -1143,7 +1143,6 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
         promise = fetchJson(api_url);
       }
 
-      console.error('[Scripting] we have a promise?');
       promise.then(function (r) {
         if (!r) {
           failCallback && failCallback('no data by opensea, try again later');
@@ -32946,7 +32945,9 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
 
       Object.assign(this, parcel); // Create features array
 
-      this._allowedUsers = parcel.contributors || [];
+      this._allowedUsers = parcel.contributors.map(function (c) {
+        return c.toLowerCase();
+      }) || [];
       this.featuresList = Array.from(parcel.features).map(function (f) {
         return !!f && Feature.create(_this2, f);
       });
@@ -33041,12 +33042,12 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
     key: "_setSnapshot",
     value: function _setSnapshot(snapshot_id) {
       if (!this.snapshots) {
-        console.error("Call parcel.fetchSnapshots first");
+        console.error("[Scripting] Call parcel.fetchSnapshots first");
         return;
       }
 
       if (this.snapshots.length == 0) {
-        console.error("No snapshots for this parcel");
+        console.error("[Scripting] No snapshots for this parcel");
         return;
       }
 
@@ -33055,12 +33056,12 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
       });
 
       if (!snapshot) {
-        console.error("Could not find snapshot given ID");
+        console.error("[Scripting] Could not find snapshot given ID");
         return;
       }
 
       if (!("content" in snapshot) || snapshot.is_snapshot !== true) {
-        console.error("Not a valid snapshot");
+        console.error("[Scripting] Not a valid snapshot");
         return;
       }
 

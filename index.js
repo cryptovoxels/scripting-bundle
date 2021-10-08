@@ -236,7 +236,7 @@ class Parcel extends EventEmitter {
 
   parse(parcel) {
     Object.assign(this, parcel); // Create features array
-    this._allowedUsers=parcel.contributors||[]
+    this._allowedUsers=parcel.contributors.map((c)=>c.toLowerCase())||[]
     this.featuresList = Array.from(parcel.features).map(
       (f) => !!f && Feature.create(this, f)
     );
