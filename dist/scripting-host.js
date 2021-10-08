@@ -32945,9 +32945,12 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
 
       Object.assign(this, parcel); // Create features array
 
-      this._allowedUsers = parcel.contributors.map(function (c) {
-        return c.toLowerCase();
-      }) || [];
+      if (parcel.contributors) {
+        this._allowedUsers = parcel.contributors.map(function (c) {
+          return c.toLowerCase();
+        });
+      }
+
       this.featuresList = Array.from(parcel.features).map(function (f) {
         return !!f && Feature.create(_this2, f);
       });
