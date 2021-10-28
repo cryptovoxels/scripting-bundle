@@ -8,6 +8,7 @@ class Player extends EventEmitter {
     super();
     Object.assign(this, description);
     this.parcel = parcel;
+    this._token = description && description._token;
     this.uuid = description && description.uuid;
     this.name = description && description.name;
     this.wallet = description && description.wallet;
@@ -61,12 +62,19 @@ class Player extends EventEmitter {
     return this._iswithinParcel
   }
 
+  get token(){
+    return this._token
+  }
+
   _set(playerInfo=null){
     if(!playerInfo){
       return
     }
     if(playerInfo.name){
       this.name = playerInfo.name
+    }
+    if(playerInfo.wallet){
+      this.wallet = playerInfo.wallet
     }
     if(typeof playerInfo._iswithinParcel !==undefined){
       this._iswithinParcel = !!playerInfo._iswithinParcel

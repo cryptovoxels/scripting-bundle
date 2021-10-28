@@ -166,9 +166,8 @@ class Parcel extends EventEmitter {
       return;
     }
 
-
     let p = this.players.find(
-      (p) => p.wallet.toLowerCase() === player.wallet?.toLowerCase() && p.uuid === player.uuid
+      (p) => p._token.toLowerCase() === player._token?.toLowerCase()
     );
 
     // Check if player is allowed in parcel only for the `playerenter` event
@@ -223,7 +222,7 @@ class Parcel extends EventEmitter {
       return
     }
     let p = this.players.find(
-      (p) => p.wallet.toLowerCase() === player.wallet?.toLowerCase() && p.uuid === player.uuid
+      (p) => p._token.toLowerCase() === player._token?.toLowerCase()
     );
 
     if(p){
@@ -462,8 +461,9 @@ class Parcel extends EventEmitter {
       }
 
       let oldPlayer = this.players.find(
-        (p) => p.wallet.toLowerCase() == e.data.player.wallet?.toLowerCase()
+        (p) => p._token.toLowerCase() == e.data._token?.toLowerCase()
       );
+
       if (oldPlayer) {
         // we have an old player (perfect)
         ws.player =
@@ -478,6 +478,11 @@ class Parcel extends EventEmitter {
       // A previous player is re-joining and socket Id is already registered
       if (oldPlayer) {
         ws.player = new Player(e.data.player, this);
+        let i = this.players.indexOf(oldPlayer);
+        if (i !== -1) {
+          this.players[i] = ws.player;
+        }
+
         this.join(ws.player,null);
       } else {
         // We do not have that player
