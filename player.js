@@ -8,9 +8,11 @@ class Player extends EventEmitter {
     super();
     Object.assign(this, description);
     this.parcel = parcel;
+    this._token = description && description._token;
     this.uuid = description && description.uuid;
     this.name = description && description.name;
     this.wallet = description && description.wallet;
+    this._iswithinParcel = false
     this.position = new Vector3();
     this.rotation = new Vector3();
     this.collectibles = description && description.collectibles;
@@ -18,6 +20,11 @@ class Player extends EventEmitter {
 
   emote = throttle(
     (emoji) => {
+      if(!this.iswithinParcel){
+        // don't allow this if user is outside parcel
+        return
+      }
+
       if(!emojis.includes(emoji)){
         return
       }
@@ -33,6 +40,10 @@ class Player extends EventEmitter {
 
   animate = throttle(
     (animation) => {
+      if(!this.iswithinParcel){
+        // don't allow this if user is outside parcel
+        return
+      }
       const a = animations.find((a)=>a.name==animation)
       if(!a){
         return
@@ -47,12 +58,26 @@ class Player extends EventEmitter {
     { leading: true, trailing: false }
   );
 
+  get iswithinParcel(){
+    return this._iswithinParcel
+  }
+
+  get token(){
+    return this._token
+  }
+
   _set(playerInfo=null){
     if(!playerInfo){
       return
     }
     if(playerInfo.name){
       this.name = playerInfo.name
+    }
+    if(playerInfo.wallet){
+      this.wallet = playerInfo.wallet
+    }
+    if(typeof playerInfo._iswithinParcel !==undefined){
+      this._iswithinParcel = !!playerInfo._iswithinParcel
     }
     if(playerInfo.collectibles){
       this.collectibles = playerInfo.collectibles
@@ -64,6 +89,10 @@ class Player extends EventEmitter {
   }
 
   teleportTo(coords) {
+    if(!this.iswithinParcel){
+      // don't allow this if user is outside parcel
+      return
+    }
     if (!coords || coords == "") {
       return;
     }
@@ -164,6 +193,10 @@ class Player extends EventEmitter {
   }
 
   kick(reason=null){
+    if(!this.iswithinParcel){
+      // don't allow this if user is outside parcel
+      return
+    }
     if(this.wallet == this.parcel.owner){
       console.log('[Scripting] Cannot kick the owner')
       return

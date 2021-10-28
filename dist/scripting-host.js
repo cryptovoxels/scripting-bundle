@@ -997,6 +997,11 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
     _this = _super.call(this);
 
     _defineProperty(_assertThisInitialized(_this), "emote", throttle(function (emoji) {
+      if (!_this.iswithinParcel) {
+        // don't allow this if user is outside parcel
+        return;
+      }
+
       if (!emojis.includes(emoji)) {
         return;
       }
@@ -1012,6 +1017,11 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
     }));
 
     _defineProperty(_assertThisInitialized(_this), "animate", throttle(function (animation) {
+      if (!_this.iswithinParcel) {
+        // don't allow this if user is outside parcel
+        return;
+      }
+
       var a = animations.find(function (a) {
         return a.name == animation;
       });
@@ -1032,9 +1042,11 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
 
     Object.assign(_assertThisInitialized(_this), description);
     _this.parcel = parcel;
+    _this._token = description && description._token;
     _this.uuid = description && description.uuid;
     _this.name = description && description.name;
     _this.wallet = description && description.wallet;
+    _this._iswithinParcel = false;
     _this.position = new Vector3();
     _this.rotation = new Vector3();
     _this.collectibles = description && description.collectibles;
@@ -1042,6 +1054,16 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
   }
 
   _createClass(Player, [{
+    key: "iswithinParcel",
+    get: function get() {
+      return this._iswithinParcel;
+    }
+  }, {
+    key: "token",
+    get: function get() {
+      return this._token;
+    }
+  }, {
     key: "_set",
     value: function _set() {
       var playerInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
@@ -1052,6 +1074,14 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
 
       if (playerInfo.name) {
         this.name = playerInfo.name;
+      }
+
+      if (playerInfo.wallet) {
+        this.wallet = playerInfo.wallet;
+      }
+
+      if (_typeof(playerInfo._iswithinParcel) !== undefined) {
+        this._iswithinParcel = !!playerInfo._iswithinParcel;
       }
 
       if (playerInfo.collectibles) {
@@ -1067,6 +1097,11 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
     key: "teleportTo",
     value: function teleportTo(coords) {
       var _this2 = this;
+
+      if (!this.iswithinParcel) {
+        // don't allow this if user is outside parcel
+        return;
+      }
 
       if (!coords || coords == "") {
         return;
@@ -1194,6 +1229,11 @@ var Player = /*#__PURE__*/function (_EventEmitter) {
     value: function kick() {
       var reason = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
+      if (!this.iswithinParcel) {
+        // don't allow this if user is outside parcel
+        return;
+      }
+
       if (this.wallet == this.parcel.owner) {
         console.log('[Scripting] Cannot kick the owner');
         return;
@@ -1305,7 +1345,8 @@ var arrayProperties = {
   scale: ['number', 'number', 'number'],
   tryPosition: ['number', 'number', 'number'],
   tryRotation: ['number', 'number', 'number'],
-  tryScale: ['number', 'number', 'number']
+  tryScale: ['number', 'number', 'number'],
+  specularColor: ['number', 'number', 'number']
 };
 
 function _isValidArray(array) {
@@ -32763,7 +32804,7 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
     value: function onMessage(ws, msg) {
       //  if(msg.type=='click'){console.log('onMessage', msg)}
       if (msg.type === "playerenter") {
-        this.join(msg.player);
+        this.join(msg.player, msg.type);
         return;
       }
 
@@ -32772,7 +32813,15 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
       }
 
       if (msg.type === "playerleave") {
-        this.leave(ws.player);
+        // player left the parcel
+        this.exitParcel(msg.player);
+      } else if (msg.type === "playernearby") {
+        // player in the area
+        this.join(msg.player, msg.type);
+        return;
+      } else if (msg.type === "playeraway") {
+        // player left the area
+        this.leave(msg.player);
       } else if (msg.type === "move") {
         if (!ws.player.onMove) {
           return;
@@ -32856,58 +32905,99 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
   }, {
     key: "join",
     value: function join(player) {
+      var event = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      // Player here SHOULD be an object with a wallet and a uuid
       if (!player.wallet) {
         return;
       }
 
       var p = this.players.find(function (p) {
-        return p.wallet === player.wallet && p.uuid === player.uuid;
-      });
-      var isAllowed = this.isWalletAllowedIfPrivate(player.wallet);
+        var _player$_token;
 
-      if (!isAllowed) {
-        console.log('[Scripting] Wallet Not allowed in parcel'); // if user is not allowed in parcel kick him.
+        return p._token.toLowerCase() === ((_player$_token = player._token) === null || _player$_token === void 0 ? void 0 : _player$_token.toLowerCase());
+      }); // Check if player is allowed in parcel only for the `playerenter` event
 
-        var tmpPlayer = player instanceof Player ? player : new Player(player, this);
-        tmpPlayer.kick("Parcel ".concat(this.id, " is private and you're not allowed by the owner."));
-        return;
-      }
+      if (event == 'playerenter') {
+        var isAllowed = this.isWalletAllowedIfPrivate(player.wallet);
 
-      if (this.allowLoggedInOnly) {
-        var _tmpPlayer = player instanceof Player ? player : new Player(player, this);
+        if (!isAllowed) {
+          console.log('[Scripting] Wallet Not allowed in parcel'); // if user is not allowed in parcel kick him.
 
-        if (!_tmpPlayer.isLoggedIn()) {
-          console.log('[Scripting] non-logged in users not allowed in parcel');
-
-          _tmpPlayer.kick("Parcel ".concat(this.id, " only allows signed-in users."));
-
+          var tmpPlayer = player instanceof Player ? player : new Player(player, this);
+          tmpPlayer.kick("Parcel ".concat(this.id, " is private and you're not allowed by the owner."));
           return;
         }
+
+        if (this.allowLoggedInOnly) {
+          var _tmpPlayer = player instanceof Player ? player : new Player(player, this);
+
+          if (!_tmpPlayer.isLoggedIn()) {
+            console.log('[Scripting] non-logged in users not allowed in parcel');
+
+            _tmpPlayer.kick("Parcel ".concat(this.id, " only allows signed-in users."));
+
+            return;
+          }
+        } // player is inside parcel
+
+
+        player._iswithinParcel = true;
+      } else if (event == 'playernearby') {
+        // player is nearby parcel
+        player._iswithinParcel = false;
+      } else if (event == 'join') {
+        //nothing
+        player._iswithinParcel = false;
       }
 
       if (p) {
         p._set(player);
+      } else {
+        p = new Player(player, this);
+        this.players.push(p);
+      } // we never rebroadcast the join event, pointless
 
+
+      if (event !== 'join') {
+        this.emit(event, {
+          player: p
+        });
+      }
+    }
+  }, {
+    key: "exitParcel",
+    value: function exitParcel(player) {
+      if (!player.wallet) {
         return;
       }
 
-      this.emit("playerenter", {
-        player: player instanceof Player ? player : new Player(player, this)
+      var p = this.players.find(function (p) {
+        var _player$_token2;
+
+        return p._token.toLowerCase() === ((_player$_token2 = player._token) === null || _player$_token2 === void 0 ? void 0 : _player$_token2.toLowerCase());
       });
 
-      if (!player instanceof Player) {
-        return;
+      if (p) {
+        p._iswithinParcel = false;
+        this.emit("playerleave", {
+          player: p
+        });
       }
-
-      this.players.push(player);
     }
   }, {
     key: "leave",
     value: function leave(player) {
       var p = this.getPlayerByWallet(player.wallet);
+
+      if (!p) {
+        return;
+      }
+
       var i = this.players.indexOf(p);
       this.players.splice(i, 1);
-      this.emit("playerleave", {
+      player._iswithinParcel = false;
+      this.emit("playeraway", {
         player: player instanceof Player ? player : new Player(player, this)
       });
     }
@@ -33008,6 +33098,13 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
     key: "getPlayers",
     value: function getPlayers() {
       return this.players;
+    }
+  }, {
+    key: "getPlayersWithinParcel",
+    value: function getPlayersWithinParcel() {
+      return this.players.filter(function (p) {
+        return !!p.iswithinParcel;
+      });
     }
     /* Thottled functions */
 
@@ -33135,7 +33232,9 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
         }
 
         var oldPlayer = _this4.players.find(function (p) {
-          return p.wallet == e.data.player.wallet;
+          var _e$data$_token;
+
+          return p._token.toLowerCase() == ((_e$data$_token = e.data._token) === null || _e$data$_token === void 0 ? void 0 : _e$data$_token.toLowerCase());
         });
 
         if (oldPlayer) {
@@ -33150,7 +33249,7 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
         } // A previous player is re-joining and socket Id is already registered
 
 
-        if (oldPlayer && e.data.player.wallet === oldPlayer.wallet) {
+        if (oldPlayer) {
           ws.player = new Player(e.data.player, _this4);
 
           var i = _this4.players.indexOf(oldPlayer);
@@ -33158,11 +33257,14 @@ var Parcel = /*#__PURE__*/function (_EventEmitter) {
           if (i !== -1) {
             _this4.players[i] = ws.player;
           }
+
+          _this4.join(ws.player, null);
         } else {
           // We do not have that player
           ws.player = new Player(e.data.player, _this4);
 
-          _this4.join(ws.player);
+          _this4.join(ws.player, 'join'); // don't throw an event on join, receive the proper "playerenter" or "playernearby" later
+
         }
       };
     }

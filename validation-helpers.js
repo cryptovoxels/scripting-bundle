@@ -67,6 +67,7 @@ const types = {
     tryPosition:['number','number','number'],
     tryRotation:['number','number','number'],
     tryScale:['number','number','number'],
+    specularColor:['number','number','number'],
   }
 
 function _isValidArray(array,expectedLength=3,type=null){

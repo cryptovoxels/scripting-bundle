@@ -69,7 +69,7 @@ class Parcel extends EventEmitter {
   onMessage(ws, msg) {
     //  if(msg.type=='click'){console.log('onMessage', msg)}
     if (msg.type === "playerenter") {
-      this.join(msg.player);
+      this.join(msg.player,msg.type);
       return;
     }
 
@@ -78,7 +78,15 @@ class Parcel extends EventEmitter {
     }
 
     if (msg.type === "playerleave") {
-      this.leave(ws.player);
+      // player left the parcel
+      this.exitParcel(msg.player);
+    } else if (msg.type === "playernearby") {
+      // player in the area
+      this.join(msg.player,msg.type);
+      return;
+    } else if (msg.type ==="playeraway"){
+      // player left the area
+      this.leave(msg.player);
     } else if (msg.type === "move") {
       if (!ws.player.onMove) {
         return;
@@ -152,54 +160,90 @@ class Parcel extends EventEmitter {
     }
   }
 
-  join(player) {
+  join(player,event=null) {
+    // Player here SHOULD be an object with a wallet and a uuid
     if (!player.wallet) {
       return;
     }
+
     let p = this.players.find(
-      (p) => p.wallet === player.wallet && p.uuid === player.uuid
+      (p) => p._token.toLowerCase() === player._token?.toLowerCase()
     );
 
-    let isAllowed = this.isWalletAllowedIfPrivate(player.wallet)
-    if(!isAllowed){
-      console.log('[Scripting] Wallet Not allowed in parcel')
-      // if user is not allowed in parcel kick him.
-      let tmpPlayer = player instanceof Player ? player : new Player(player, this)
-      tmpPlayer.kick(`Parcel ${this.id} is private and you're not allowed by the owner.`)
-      return
-    }
-    
-    if (this.allowLoggedInOnly){
-      let tmpPlayer = player instanceof Player ? player : new Player(player, this)
+    // Check if player is allowed in parcel only for the `playerenter` event
+    if(event=='playerenter'){
 
-      if(!tmpPlayer.isLoggedIn()){
-        console.log('[Scripting] non-logged in users not allowed in parcel')
-        tmpPlayer.kick(`Parcel ${this.id} only allows signed-in users.`)
+      let isAllowed = this.isWalletAllowedIfPrivate(player.wallet)
+      if(!isAllowed){
+        console.log('[Scripting] Wallet Not allowed in parcel')
+        // if user is not allowed in parcel kick him.
+        let tmpPlayer = player instanceof Player ? player : new Player(player, this)
+        tmpPlayer.kick(`Parcel ${this.id} is private and you're not allowed by the owner.`)
         return
       }
-
+      
+      if (this.allowLoggedInOnly){
+        let tmpPlayer = player instanceof Player ? player : new Player(player, this)
+  
+        if(!tmpPlayer.isLoggedIn()){
+          console.log('[Scripting] non-logged in users not allowed in parcel')
+          tmpPlayer.kick(`Parcel ${this.id} only allows signed-in users.`)
+          return
+        }
+  
+      }
+      // player is inside parcel
+      player._iswithinParcel=true
+    }else if(event=='playernearby'){
+      // player is nearby parcel
+      player._iswithinParcel=false
+    }else if(event=='join'){
+     //nothing
+     player._iswithinParcel=false
     }
 
     if (p) {
       p._set(player)
-      return;
+    }else{
+      p = new Player(player,this)
+      this.players.push(p);
     }
-    this.emit("playerenter", {
-      player: player instanceof Player ? player : new Player(player, this),
-    });
-    if (!player instanceof Player) {
-      return;
+
+    // we never rebroadcast the join event, pointless
+    if(event !=='join'){
+      this.emit(event, {
+        player: p,
+      });
     }
-    this.players.push(player);
+  }
+
+  exitParcel(player){
+    if(!player.wallet){
+      return
+    }
+    let p = this.players.find(
+      (p) => p._token.toLowerCase() === player._token?.toLowerCase()
+    );
+
+    if(p){
+      p._iswithinParcel = false
+      this.emit("playerleave", {
+        player: p,
+      });
+    }
+
   }
 
   leave(player) {
     let p = this.getPlayerByWallet(player.wallet);
+    if(!p){
+      return
+    }
     const i = this.players.indexOf(p);
 
     this.players.splice(i, 1);
-
-    this.emit("playerleave", {
+    player._iswithinParcel = false
+    this.emit("playeraway", {
       player: player instanceof Player ? player : new Player(player, this),
     });
   }
@@ -278,6 +322,11 @@ class Parcel extends EventEmitter {
   getPlayers() {
     return this.players;
   }
+
+  getPlayersWithinParcel() {
+    return this.players.filter((p)=>!!p.iswithinParcel);
+  }
+
   /* Thottled functions */
   fetchSnapshots = throttle(
     (callback = null) => {
@@ -412,8 +461,9 @@ class Parcel extends EventEmitter {
       }
 
       let oldPlayer = this.players.find(
-        (p) => p.wallet == e.data.player.wallet
+        (p) => p._token.toLowerCase() == e.data._token?.toLowerCase()
       );
+
       if (oldPlayer) {
         // we have an old player (perfect)
         ws.player =
@@ -426,16 +476,18 @@ class Parcel extends EventEmitter {
         return;
       }
       // A previous player is re-joining and socket Id is already registered
-      if (oldPlayer && e.data.player.wallet === oldPlayer.wallet) {
+      if (oldPlayer) {
         ws.player = new Player(e.data.player, this);
         let i = this.players.indexOf(oldPlayer);
         if (i !== -1) {
           this.players[i] = ws.player;
         }
+
+        this.join(ws.player,null);
       } else {
         // We do not have that player
         ws.player = new Player(e.data.player, this);
-        this.join(ws.player);
+        this.join(ws.player,'join'); // don't throw an event on join, receive the proper "playerenter" or "playernearby" later
       }
     };
   }
