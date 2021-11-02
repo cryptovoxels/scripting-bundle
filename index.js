@@ -324,7 +324,7 @@ class Parcel extends EventEmitter {
   }
 
   getPlayersWithinParcel() {
-    return this.players.filter((p)=>!!p.iswithinParcel);
+    return this.players.filter((p)=>!!p.isWithinParcel);
   }
 
   /* Thottled functions */
@@ -456,12 +456,16 @@ class Parcel extends EventEmitter {
     };
 
     self.onmessage = (e) => {
+      if(e.data && (e.data.target == "metamask-contentscript" || e.data.target =="metamask-inpage" || e.data.target =="inpage")){
+        // ignore metamask messages
+        return;
+      }
       if (!e.data.player) {
         return;
       }
 
       let oldPlayer = this.players.find(
-        (p) => p._token.toLowerCase() == e.data._token?.toLowerCase()
+        (p) => p._token.toLowerCase() == e.data.player._token?.toLowerCase()
       );
 
       if (oldPlayer) {
@@ -477,8 +481,14 @@ class Parcel extends EventEmitter {
       }
       // A previous player is re-joining and socket Id is already registered
       if (oldPlayer) {
-        ws.player = new Player(e.data.player, this);
         let i = this.players.indexOf(oldPlayer);
+        if(oldPlayer instanceof Player){
+          oldPlayer._set(e.data.player)
+        }else{
+          oldPlayer = new Player(e.data.player, this);
+        }
+        ws.player = oldPlayer
+
         if (i !== -1) {
           this.players[i] = ws.player;
         }
