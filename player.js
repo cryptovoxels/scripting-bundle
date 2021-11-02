@@ -20,7 +20,7 @@ class Player extends EventEmitter {
 
   emote = throttle(
     (emoji) => {
-      if(!this.iswithinParcel){
+      if(!this.isWithinParcel){
         // don't allow this if user is outside parcel
         return
       }
@@ -40,7 +40,7 @@ class Player extends EventEmitter {
 
   animate = throttle(
     (animation) => {
-      if(!this.iswithinParcel){
+      if(!this.isWithinParcel){
         // don't allow this if user is outside parcel
         return
       }
@@ -58,7 +58,7 @@ class Player extends EventEmitter {
     { leading: true, trailing: false }
   );
 
-  get iswithinParcel(){
+  get isWithinParcel(){
     return this._iswithinParcel
   }
 
@@ -89,7 +89,7 @@ class Player extends EventEmitter {
   }
 
   teleportTo(coords) {
-    if(!this.iswithinParcel){
+    if(!this.isWithinParcel){
       // don't allow this if user is outside parcel
       return
     }
@@ -193,7 +193,7 @@ class Player extends EventEmitter {
   }
 
   kick(reason=null){
-    if(!this.iswithinParcel){
+    if(!this.isWithinParcel){
       // don't allow this if user is outside parcel
       return
     }
