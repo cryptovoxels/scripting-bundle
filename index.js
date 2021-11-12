@@ -20,6 +20,21 @@ const animations = require("./helpers.js").animations;
 const { VoxelField } = require("./voxel-field");
 const Player = require("./player");
 
+const supportedMessageTypes={
+  Join:'join',
+  PlayerEnter:'playerenter',
+  PlayerLeave:'playerleave',
+  PlayerNearby:'playernearby',
+  PlayerAway:'playeraway',
+  Move:'move',
+  Click:'click',
+  Keys:'keys',
+  Start:'start',
+  Stop:'stop',
+  Changed:'changed',
+  Trigger:'trigger'
+}
+
 function getGlobal() {
   if (typeof global !== "undefined") {
     return global;
@@ -63,13 +78,11 @@ class Parcel extends EventEmitter {
     this._isPrivate = false 
     this._allowLoggedInOnly = false 
   }
-
-  listen(port) {}
-
+  
   onMessage(ws, msg) {
     //  if(msg.type=='click'){console.log('onMessage', msg)}
     if (msg.type === "playerenter") {
-      this.join(msg.player,msg.type);
+      this.join(ws.player,msg.type);
       return;
     }
 
@@ -79,14 +92,14 @@ class Parcel extends EventEmitter {
 
     if (msg.type === "playerleave") {
       // player left the parcel
-      this.exitParcel(msg.player);
+      this.exitParcel(ws.player);
     } else if (msg.type === "playernearby") {
       // player in the area
-      this.join(msg.player,msg.type);
+      this.join(ws.player,msg.type);
       return;
     } else if (msg.type ==="playeraway"){
       // player left the area
-      this.leave(msg.player);
+      this.leave(ws.player);
     } else if (msg.type === "move") {
       if (!ws.player.onMove) {
         return;
@@ -162,7 +175,7 @@ class Parcel extends EventEmitter {
 
   join(player,event=null) {
     // Player here SHOULD be an object with a wallet and a uuid
-    if (!player.wallet) {
+    if (!player._token && !player.wallet) {
       return;
     }
 
@@ -218,7 +231,7 @@ class Parcel extends EventEmitter {
   }
 
   exitParcel(player){
-    if(!player.wallet){
+    if(!player._token){
       return
     }
     let p = this.players.find(
@@ -235,16 +248,21 @@ class Parcel extends EventEmitter {
   }
 
   leave(player) {
-    let p = this.getPlayerByWallet(player.wallet);
-    if(!p){
+    if(!player._token){
       return
     }
-    const i = this.players.indexOf(p);
+    let p = this.players.find(
+      (p) => p._token.toLowerCase() === player._token?.toLowerCase()
+    );
 
+    const i = this.players.indexOf(p);
+    if(i==-1){
+      return
+    }
     this.players.splice(i, 1);
-    player._iswithinParcel = false
+    p._iswithinParcel = false
     this.emit("playeraway", {
-      player: player instanceof Player ? player : new Player(player, this),
+      player: p
     });
   }
 
@@ -460,45 +478,52 @@ class Parcel extends EventEmitter {
         // ignore metamask messages
         return;
       }
-      if (!e.data.player) {
-        return;
+
+      if(!Object.values(supportedMessageTypes).includes(e.data.type)){
+          // invalid message type, ignore
+          return
       }
 
+      if (!e.data.player) {
+          // no player record in the dataPacket, ignore
+        return;
+      }
       let oldPlayer = this.players.find(
         (p) => p._token.toLowerCase() == e.data.player._token?.toLowerCase()
       );
 
       if (oldPlayer) {
         // we have an old player (perfect)
-        ws.player =
-          oldPlayer instanceof Player ? oldPlayer : new Player(oldPlayer, this);
+        ws.player =oldPlayer
       }
-
-      // We don't have a new player:
-      if (e.data.type !== "join") {
-        parcel.onMessage(ws, e.data);
+      
+      if (ws.player && e.data.type !== supportedMessageTypes.Join) {
+        this.onMessage(ws, e.data);
         return;
       }
-      // A previous player is re-joining and socket Id is already registered
-      if (oldPlayer) {
-        let i = this.players.indexOf(oldPlayer);
-        if(oldPlayer instanceof Player){
-          oldPlayer._set(e.data.player)
-        }else{
-          oldPlayer = new Player(e.data.player, this);
-        }
-        ws.player = oldPlayer
 
-        if (i !== -1) {
-          this.players[i] = ws.player;
+        // A previous player is re-joining and socket Id is already registered
+        if (oldPlayer) {
+          let i = this.players.indexOf(oldPlayer);
+          if(oldPlayer instanceof Player){
+            oldPlayer._set(e.data.player)
+            // player already exists in the array
+            ws.player = oldPlayer
+            return
+          }else{
+            oldPlayer = new Player(e.data.player, this);
+            ws.player = oldPlayer
+            if (i !== -1) {
+              this.players[i] = ws.player;
+            }
+            this.join(ws.player,null);
+          }
+ 
+        } else {
+          // We do not have that player
+          ws.player = new Player(e.data.player, this);
+          this.join(ws.player,'join'); // don't throw an event on join, receive the proper "playerenter" or "playernearby" later
         }
-
-        this.join(ws.player,null);
-      } else {
-        // We do not have that player
-        ws.player = new Player(e.data.player, this);
-        this.join(ws.player,'join'); // don't throw an event on join, receive the proper "playerenter" or "playernearby" later
-      }
     };
   }
 
@@ -543,14 +568,14 @@ class Parcel extends EventEmitter {
     return this._allowedUsers || []
   }
 
-  allow(wallet){
-    if(typeof wallet !== 'string' && typeof wallet !== 'object'){
+  allow(walletOrWallets){
+    if(typeof walletOrWallets !== 'string' && typeof walletOrWallets !== 'object'){
       console.log('[Scripting] wallet has to be a string or and array')
       return
     }
-    if(Array.isArray(wallet)){
-      wallet.forEach((w)=>{
-        if(typeof w == 'string' && this.allowedWallets.indexOf(wallet)==-1){
+    if(Array.isArray(walletOrWallets)){
+      walletOrWallets.forEach((w)=>{
+        if(typeof w == 'string' && this.allowedWallets.indexOf(w)==-1){
           this._allowedUsers.push(w.toLowerCase())
         }
         
@@ -558,11 +583,11 @@ class Parcel extends EventEmitter {
       return
     }
     // Wallet is a string:
-    if(this._allowedUsers.indexOf(wallet.toLowerCase())!=-1){
+    if(this._allowedUsers.indexOf(walletOrWallets.toLowerCase())!=-1){
       console.log('[Scripting] Wallet already allowed')
       return
     }
-    this._allowedUsers.push(wallet.toLowerCase())
+    this._allowedUsers.push(walletOrWallets.toLowerCase())
   }
   disallow(wallet){
     if(typeof wallet !== 'string'){
@@ -603,9 +628,24 @@ class Space extends Parcel {
   constructor(id) {
     super(id);
   }
+  
+  _fetchSnapshots() {
+    console.log('[Scripting] fetchsnapshot() Not supported in spaces')
+  }
+  _setSnapshot() {
+      console.log('[Scripting] setSnapshot() Not supported in spaces')
+  }
 
-  _fetchSnapshots() {}
-  _setSnapshot() {}
+  disallow(){
+      console.log('[Scripting] Disallow() Not supported in spaces')
+  }
+  allow(){
+      console.log('[Scripting] Allow() Not supported in spaces')
+  }
+
+  isWalletAllowedIfPrivate(wallet){
+      return true
+  }
 }
 
 export default {
