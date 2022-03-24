@@ -32,7 +32,8 @@ const supportedMessageTypes={
   Start:'start',
   Stop:'stop',
   Changed:'changed',
-  Trigger:'trigger'
+  Trigger:'trigger',
+  Patch:'patch'
 }
 
 function getGlobal() {
@@ -139,6 +140,8 @@ class Parcel extends EventEmitter {
         }
       }
 
+      !!f && !!f.onClick && f.onClick();
+
       !!f && f.emit("click", e);
       !!player && player.emit("click", e);
     } else if (msg.type === "trigger") {
@@ -155,21 +158,39 @@ class Parcel extends EventEmitter {
 
       f.emit("trigger", e);
     } else if (msg.type === "keys") {
+      // used by animations
       const f = this.getFeatureByUuid(msg.uuid);
       if (!f) return;
       f.emit("keys", msg.event);
     } else if (msg.type === "start") {
+      // mainly used by vidScreen
       const f = this.getFeatureByUuid(msg.uuid);
       if (!f) return;
       f.emit("start");
     } else if (msg.type === "stop") {
+      // mainly used by vidScreen
       const f = this.getFeatureByUuid(msg.uuid);
       if (!f) return;
       f.emit("stop");
     } else if (msg.type === "changed") {
+      // Catch "Changed" values in input-text or slider-input objects
       const f = this.getFeatureByUuid(msg.uuid);
       if (!f) return;
       f.emit("changed", msg.event);
+    } else if (msg.type === "patch") { 
+      // parcel feature patch; These are patches from client-> server that are also sent to ScriptHost to update the feature.
+      const f = this.getFeatureByUuid(msg.uuid);
+      const data = msg.event
+
+      if (!f) return;
+      let description = f._content
+
+      Array.from(Object.keys(data)).forEach((key)=>{
+        description[key] = data[key]
+      })
+      // update the feature (reset it)
+      this.removeFeature(f,false)
+      this.createFeature(description.type,description,false)
     }
   }
 
@@ -430,7 +451,7 @@ class Parcel extends EventEmitter {
     });
   }
 
-  createFeature(type, description) {
+  createFeature(type, description,shouldBroadcast=true) {
     const feature = Feature.create(
       this,
       Object.assign(
@@ -446,6 +467,7 @@ class Parcel extends EventEmitter {
       )
     );
     this.featuresList.push(feature);
+    if(!shouldBroadcast)return;
     this.broadcast({
       type: "create",
       uuid: feature.uuid,
@@ -454,11 +476,14 @@ class Parcel extends EventEmitter {
     return feature;
   }
 
-  removeFeature(f) {
-    this.broadcast({
-      type: "remove",
-      uuid: f.uuid,
-    });
+  removeFeature(f,shouldBroadcast=true) {
+    if(shouldBroadcast){
+      this.broadcast({
+        type: "remove",
+        uuid: f.uuid,
+      });
+
+    }
     const i = this.featuresList.indexOf(f);
 
     if (i > -1) {

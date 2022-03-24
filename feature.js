@@ -182,7 +182,18 @@ class Feature extends EventEmitter {
 }
 
 class Audio extends Feature {
+  isPlaying=false;
+
+  onClick=()=>{
+    if(this.isPlaying){
+      this.pause()
+    }else{
+      this.play()
+    }
+  }
+
   play() {
+    this.isPlaying=true
     this.parcel.broadcast({
       type: "play",
       uuid: this.uuid,
@@ -190,6 +201,7 @@ class Audio extends Feature {
   }
 
   pause() {
+    this.isPlaying=false
     this.parcel.broadcast({
       type: "pause",
       uuid: this.uuid,
@@ -197,6 +209,7 @@ class Audio extends Feature {
   }
 
   stop() {
+    this.isPlaying=false
     this.parcel.broadcast({
       type: "stop",
       uuid: this.uuid,
@@ -274,6 +287,16 @@ class SliderInput extends Feature {
   }
 }
 class Video extends Feature {
+  isPlaying=false;
+
+  onClick=()=>{
+    if(this.isPlaying){
+      this.pause()
+    }else{
+      this.play()
+    }
+  }
+
   play() {
     this.parcel.broadcast({
       type: "play",
@@ -300,7 +323,23 @@ class Video extends Feature {
 }
 
 class Youtube extends Feature {
+  isPlaying=false;
+  isPaused=false;
+
+  onClick=()=>{
+    if(this.isPlaying){
+      if(this.isPaused){
+        this.unpause()
+      }else{
+        this.pause()
+      }
+    }else{
+      this.play()
+    }
+  }
+
   play() {
+    this.isPlaying=true
     this.parcel.broadcast({
       type: "play",
       uuid: this.uuid,
@@ -308,13 +347,23 @@ class Youtube extends Feature {
   }
 
   pause() {
+    this.isPaused=true
     this.parcel.broadcast({
       type: "pause",
       uuid: this.uuid,
     });
   }
 
+  unpause() {
+    this.isPaused=false
+    this.parcel.broadcast({
+      type: "unpause",
+      uuid: this.uuid,
+    });
+  }
+
   stop() {
+    this.isPlaying=false
     this.parcel.broadcast({
       type: "stop",
       uuid: this.uuid,
