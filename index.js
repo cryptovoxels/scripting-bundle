@@ -177,6 +177,11 @@ class Parcel extends EventEmitter {
       const f = this.getFeatureByUuid(msg.uuid);
       if (!f) return;
       f.emit("changed", msg.event);
+    } else if (msg.type === "chat") {
+      // Catch "Chat" messages
+      const a = this.getPlayerByUuid(msg.uuid);
+      if (!a) return;
+      a.emit("chat", msg.event)
     } else if (msg.type === "patch") { 
       // parcel feature patch; These are patches from client-> server that are also sent to ScriptHost to update the feature.
       const f = this.getFeatureByUuid(msg.uuid);
