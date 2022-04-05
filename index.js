@@ -31,6 +31,7 @@ const supportedMessageTypes={
   Keys:'keys',
   Start:'start',
   Stop:'stop',
+  Chat:'chat',
   Changed:'changed',
   Trigger:'trigger',
   Patch:'patch'
