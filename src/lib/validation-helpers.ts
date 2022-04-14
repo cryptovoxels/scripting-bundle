@@ -56,7 +56,6 @@ const types = {
     minimum:'number',
     maximum:'number',
     default:'number',
-    text:'string',
 
   }
   
@@ -70,7 +69,7 @@ const types = {
     specularColor:['number','number','number'],
   }
 
-function _isValidArray(array,expectedLength=3,type=null){
+export function _isValidArray(array:any[],expectedLength:number=3,type:string|null=null){
     if(Array.isArray(array)){
         if(array.length == expectedLength){
             if(type){
@@ -93,7 +92,7 @@ function _isValidArray(array,expectedLength=3,type=null){
     return false
 }
 
-function _isValidProperty(value,type=null){
+export function _isValidProperty(value:any,type:string|null=null){
     if(!type){
         return true
     }
@@ -103,11 +102,11 @@ function _isValidProperty(value,type=null){
     return false
 }
 
-function _validateObject(object){
-    let resultDict = {}
+export function _validateObject(object:Record<string,any>){
+    let resultDict = {} as Record<string,any>
 
     Object.entries(object).forEach(([dictKey,value])=>{
-      let currentProperty =  Object.keys(types).find((key)=>key==dictKey)
+      let currentProperty =  Object.keys(types).find((key)=>key==dictKey) as keyof typeof types
       // We found a property with same name
       if(currentProperty){
         // If the type of value is appropriate add in to the resultDict
@@ -116,10 +115,10 @@ function _validateObject(object){
           switch(typeof value){
             case 'object':
               // We have an object, check if we're dealing with position,scale,rotation
-              let is3DProperty =  Object.keys(arrayProperties).find((key)=>key==dictKey)
+              let is3DProperty =  Object.keys(arrayProperties).find((key)=>key==dictKey) as keyof typeof arrayProperties
               if(is3DProperty){
                   // we have position,scale or rotation or another array
-                  let isValid = _isValidArray(object[currentProperty],arrayProperties[currentProperty].length,'number')
+                  let isValid = _isValidArray(object[currentProperty],arrayProperties[is3DProperty].length,'number')
                   if(isValid){
                     resultDict[currentProperty] = value
                   }else{
@@ -157,5 +156,3 @@ function _validateObject(object){
     })
     return resultDict
 }
-
-module.exports = { _validateObject, _isValidProperty };
