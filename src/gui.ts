@@ -1,4 +1,4 @@
-import { Feature } from "feature";
+import { Feature } from "./feature";
 
 const uuid = require("uuid/v4");
 const EventEmitter = require("events");

@@ -10,11 +10,11 @@ import {
 
 import { Animation } from "@babylonjs/core/Animations/animation";
 import { ParcelOrSpaceId } from "types";
-import { emojis as emojiList } from "helpers";
-import { Player } from "player";
-import { Feature } from "feature";
-import { Message, SupportedMessageTypes } from "lib/messages";
-import { FeatureDescription, ParcelBroadcastMessage, ParcelDescription, Snapshot } from "lib/types";
+import { emojis as emojiList } from "./helpers";
+import { Player } from "./player";
+import { Feature } from "./feature";
+import { Message, SupportedMessageTypes } from "./lib/messages";
+import { FeatureDescription, ParcelBroadcastMessage, ParcelDescription, Snapshot } from "./lib/types";
 const throttle = require("lodash.throttle");
 
 const uuid = require("uuid/v4");
@@ -67,6 +67,9 @@ if (G) {
   G.animations = [];
 }
 
+/**
+ * Represents the Parcel instance.
+ */
 class Parcel extends EventEmitter {
   players:Map<string,Player>
   featuresList:Feature[]
@@ -83,7 +86,10 @@ class Parcel extends EventEmitter {
     this._allowLoggedInOnly = false 
     this.snapshots =[]
   }
-
+/**
+ * Returns a summary of the parcel
+ * @returns the properties of the parcel object.
+ */
   get summary(){
     return{
       id:this.id,
@@ -189,6 +195,7 @@ class Parcel extends EventEmitter {
     } else if (msg.type === "chat") {
       // Catch "Chat" messages
       const a = this.getPlayerByUuid(msg.uuid);
+
       if (!a) return;
       a.emit("chat", msg.event)
     } else if (msg.type === "patch") { 
@@ -232,12 +239,13 @@ class Parcel extends EventEmitter {
     }
     // player is inside parcel
     player._iswithinParcel=true
-  
+    this.emit(SupportedMessageTypes.PlayerEnter,{player:player})
   }
 
   onPlayerNearby = (player:Player)=>{
     // player is nearby parcel
     player._iswithinParcel=false
+    this.emit(SupportedMessageTypes.PlayerNearby,{player:player})
   }
 
   join(player:Player) {
@@ -342,6 +350,12 @@ class Parcel extends EventEmitter {
     );
   }
 
+  /**
+   * Get a player by its UUID
+   * 
+   * @param uuid a string
+   * @returns a player or Undefined
+   */
   getPlayerByUuid(uuid:string) {
     if(typeof uuid !=='string'){
       return
@@ -352,11 +366,16 @@ class Parcel extends EventEmitter {
       if(v.uuid.toLowerCase()==uuid.toLowerCase()){
         return v
       }
-  
     }
 
   }
 
+  /**
+   * Get a player by its wallet
+   * 
+   * @param wallet the player's wallet
+   * @returns a Player object or undefined
+   */
   getPlayerByWallet(wallet:string) {
     if(typeof wallet !=='string'){
       return
@@ -558,7 +577,7 @@ class Parcel extends EventEmitter {
         ws.player =oldPlayer
         // update player info
         ws.player._set(data.player)
-        console.log('[Scripting] Welcome back ', oldPlayer.name || oldPlayer.wallet || oldPlayer.uuid)
+        // console.log('[Scripting] Welcome back ', oldPlayer.name || oldPlayer.wallet || oldPlayer.uuid)
       }else{
         // player is non-existant
         ws.player = new Player(data.player, this);

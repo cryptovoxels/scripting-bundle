@@ -1,9 +1,9 @@
 import { Vector3 } from "@babylonjs/core/Maths/math";
-import { MoveMessage } from "lib/messages";
-import { CollectibleType, PlayerDescription } from "lib/types";
+import { MoveMessage } from "./lib/messages";
+import { CollectibleType, PlayerDescription } from "./lib/types";
 
 const EventEmitter = require("events");
-const { throttle } = require("lodash");
+const throttle = require("lodash.throttle");
 
 
 export class Player extends EventEmitter {

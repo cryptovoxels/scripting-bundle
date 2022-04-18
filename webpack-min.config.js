@@ -2,7 +2,7 @@ var path = require("path");
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
-  entry: "./index.js",
+  entry: "./src/index.ts",
   output: {
     filename: "scripting-host.js",
     path: path.resolve(__dirname, "dist"),
@@ -20,12 +20,15 @@ module.exports = {
         })
       ]
   },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js'],
+  },
   module: {
     rules: [
       {
-        test: /\.js$/,
-        exclude: /(node_modules)/,
-        use: "babel-loader",
+        test: /\.ts$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
       },
     ],
   },

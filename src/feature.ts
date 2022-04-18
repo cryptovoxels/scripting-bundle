@@ -1,6 +1,6 @@
 /* global postMessage */
 
-import { AnimationTarget, FeatureDescription } from "lib/types";
+import { AnimationTarget, FeatureDescription } from "./lib/types";
 
 // const uuid = require('uuid/v4')
 const FeatureBasicGUI = require("./gui");
@@ -8,7 +8,7 @@ const throttle = require("lodash.throttle");
 const EventEmitter = require("events");
 import { Animation } from "@babylonjs/core/Animations/animation";
 import { Vector3 } from "@babylonjs/core/Maths/math";
-import { _validateObject } from "lib/validation-helpers";
+import { _validateObject } from "./lib/validation-helpers";
 
 export class Feature extends EventEmitter {
     parcel:any

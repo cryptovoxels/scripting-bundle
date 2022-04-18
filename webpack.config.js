@@ -1,7 +1,7 @@
 var path = require("path");
 
 module.exports = {
-  entry: "./index.js",
+  entry: "./src/index.ts",
   output: {
     filename: "scripting-host.js",
     path: path.resolve(__dirname, "dist"),
@@ -14,16 +14,13 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js$/,
-        exclude: /(node_modules)/,
-        use: {
-          loader: "babel-loader",
-          options: {
-            presets: ["@babel/preset-env"],
-            sourceType: "unambiguous",
-          },
-        },
+        test: /\.ts$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
       },
     ],
   },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js'],
+  }
 };
