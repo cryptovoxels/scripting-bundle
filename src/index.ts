@@ -505,7 +505,7 @@ class Parcel extends EventEmitter {
     });
   }
 
-  createFeature(type:string, description:FeatureDescription,shouldBroadcast=true) {
+  createFeature(type:string, description?:FeatureDescription,shouldBroadcast=true) {
     const feature = Feature.create(
       this,
       Object.assign(
