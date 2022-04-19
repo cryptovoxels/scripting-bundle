@@ -9,7 +9,7 @@ import {
 } from "@babylonjs/core/Maths/math";
 
 import { Animation } from "@babylonjs/core/Animations/animation";
-import { ParcelOrSpaceId } from "types";
+import { ParcelOrSpaceId } from "./types";
 import { emojis as emojiList } from "./helpers";
 import { Player } from "./player";
 import { Feature } from "./feature";
@@ -412,7 +412,7 @@ class Parcel extends EventEmitter {
 
   getPlayersWithinParcel() {
 
-    let playersInside = []
+    let playersInside:Player[] = []
     // Don't want to lose the reference to the object
     for (let [k, v] of this.players.entries()) {
       if(v.isWithinParcel){
