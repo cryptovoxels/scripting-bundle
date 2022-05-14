@@ -5,10 +5,11 @@ const EventEmitter = require("events");
 
 type GUIOptions = { billBoardMode: 1|2|0 }
 
-class FeatureBasicGUI {
+export default class FeatureBasicGUI {
   billBoardMode = 1;
   feature:Feature
   uuid:string
+  id:string=undefined!
   _listOfControls:guiControl[]
   showing:boolean= false;
   constructor(feature:Feature, options:GUIOptions = { billBoardMode: 2 }) {
@@ -205,4 +206,3 @@ class guiControl extends EventEmitter {
   }
 }
 
-module.exports = FeatureBasicGUI;

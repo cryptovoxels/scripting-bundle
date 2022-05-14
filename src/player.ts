@@ -1,8 +1,10 @@
 import { Vector3 } from "@babylonjs/core/Maths/math";
 import { MoveMessage } from "./lib/messages";
+
 import { CollectibleType, PlayerDescription } from "./lib/types";
 
-const EventEmitter = require("events");
+import {EventEmitter} from 'events';
+import Parcel from "./parcel";
 const throttle = require("lodash.throttle");
 
 
@@ -10,7 +12,14 @@ export class Player extends EventEmitter {
     collectibles:CollectibleType[]
     _token:string
     _iswithinParcel:boolean
-  constructor(description:PlayerDescription, parcel:any) {
+    uuid:string
+    parcel:Parcel
+    name:string |undefined
+    wallet:string |undefined
+    position:Vector3
+    rotation:Vector3
+    _numTeleport:number = 0
+  constructor(description:PlayerDescription, parcel:Parcel) {
     super();
     Object.assign(this, description);
     this.parcel = parcel;
@@ -46,19 +55,7 @@ export class Player extends EventEmitter {
 
   animate = throttle(
     (animation:string) => {
-      if(!this.isWithinParcel){
-        // don't allow this if user is outside parcel
-        return
-      }
-      const a = animations.find((a)=>a.name==animation)
-      if(!a){
-        return
-      }
-      this.parcel.broadcast({
-        type: "player-animate",
-        uuid: this.uuid,
-        animation: a.animation,
-      });
+      
     },
     10000,
     { leading: true, trailing: false }
@@ -172,7 +169,7 @@ export class Player extends EventEmitter {
       }
 
       if(ownsAsset){
-        ownsAsset = r.ownership.owner.address.toLowerCase() == this.wallet.toLowerCase()
+        ownsAsset = r.ownership.owner.address.toLowerCase() == this.wallet?.toLowerCase()
       }
 
       if (successCallback) {
@@ -192,7 +189,7 @@ export class Player extends EventEmitter {
     return !!this.isLoggedIn()
   }
 
-  onMove(msg:MoveMessage) {
+  onMove=(msg:MoveMessage)=> {
       if(!msg){
           return
       }
@@ -201,7 +198,7 @@ export class Player extends EventEmitter {
     this.emit("move", msg);
   }
 
-  kick(reason:string|null=null){
+  kick(reason:string|undefined=undefined){
     if(!this.isWithinParcel){
       // don't allow this if user is outside parcel
       return

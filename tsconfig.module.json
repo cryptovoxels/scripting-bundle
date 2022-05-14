@@ -4,9 +4,11 @@
     "lib": ["es2017", "dom"],
     "target": "es5",
     "typeRoots": ["./node_modules/*"],
-    "types": ["@babylonjs/core","mocha", "node"],
+    "types": ["@babylonjs/core","node"],
     "experimentalDecorators": true,
     "strict": true,
-    "downlevelIteration":true
+    "downlevelIteration":true,
+    // Generate d.ts files
+    "declaration": true,
   }
 }

@@ -1,5 +1,15 @@
 export type ParcelOrSpaceId = string|number
 
+export interface IParcel{
+    x1:number,
+    y1:number,
+    z1:number,
+    x2:number,
+    y2:number,
+    z2:number,
+}
+
+
 export type ParcelDescription ={
     id:ParcelOrSpaceId
     contributors?:string[]
@@ -21,8 +31,28 @@ export type ParcelBroadcastMessage = {
     uuid?:string,
     content?:FeatureDescription
     parcel?:ParcelDescription
-
+    emote?:string
+    animations?:any
+    coordinates?:string
+    reason?:string
+    gui?:guiBatchInfo
 }
+
+export type guiBatchInfo = {
+    uuid: string,
+    listOfControls: guiControlType[],
+    billBoardMode: number,
+}
+
+export type guiControlType={
+    uuid:string
+    type: 'button'|'text'
+    id: string|null
+    text?: string
+    fontSizePx?: string
+    height?: string | number
+    positionInGrid?: [number, number]
+  }
 
 export type FeatureDescription ={
     uuid:string,

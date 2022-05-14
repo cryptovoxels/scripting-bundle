@@ -3,3 +3,4 @@ bundle.js*
 bundle.min.js
 node_modules
 dist
+.parcel-cache

@@ -1,8 +1,10 @@
 
-import assert from "assert";
 import * as ScriptingHost from "../src/index"
-const Parcel = ScriptingHost.default.Parcel
+import Voxels from '../src/index'
+const Parcel = Voxels.Parcel
 const json = require('./parcel.json').parcel
+
+const assert = require('assert')
 
 describe('Test Parcel', function() {
   it('Create Parcel Object', function() {
@@ -22,7 +24,6 @@ describe('Test Parcel', function() {
     assert.equal(p.z2, 17)
     assert.ok(p.address)
     assert.ok(p.owner)
-    assert.equal(p.colors, 174)
   
     assert.ok(p.getFeatureByUuid('faf05014-9a08-4aeb-89c6-02da0bb8e237'))
     assert.ok(p.getFeatureById('boop'))
@@ -102,10 +103,10 @@ test('removeFeature', () => {
   if(!f){
     assert.ok(false)
   }
-  p.removeFeature(f)
+  p.removeFeature(f!)
   assert.equal(8, p.getFeatures().length)
 
-  p.removeFeature(f)
+  p.removeFeature(f!)
   assert.equal(8, p.getFeatures().length)
 
 })

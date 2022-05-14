@@ -1,22 +1,33 @@
 /* global postMessage */
 
 import { AnimationTarget, FeatureDescription } from "./lib/types";
-
 // const uuid = require('uuid/v4')
-const FeatureBasicGUI = require("./gui");
 const throttle = require("lodash.throttle");
-const EventEmitter = require("events");
+import { EventEmitter } from "events";
 import { Animation } from "@babylonjs/core/Animations/animation";
 import { Vector3 } from "@babylonjs/core/Maths/math";
 import { _validateObject } from "./lib/validation-helpers";
+import FeatureBasicGUI from "./gui";
+import Parcel from "./parcel";
 
 export class Feature extends EventEmitter {
-    parcel:any
+    parcel:Parcel
     _content:FeatureDescription
     gui:any
     _uuid:string
     _type:string
-  constructor(parcel:any, obj:FeatureDescription) {
+    metadata:any
+
+    _position:Vector3=Vector3.Zero()
+    _rotation:Vector3=Vector3.Zero()
+    _scale:Vector3=new Vector3(1, 1, 1)
+    position:Vector3
+    rotation:Vector3
+    scale:Vector3
+
+    static create:(parcel:Parcel, obj:FeatureDescription)=>Feature
+    onClick?:()=>void
+  constructor(parcel:Parcel, obj:FeatureDescription) {
     super();
     this.metadata = {};
     this.parcel = parcel;
@@ -58,12 +69,12 @@ export class Feature extends EventEmitter {
         return true;
       },
     });
-    this._position = new Vector3();
-    this.position = new Proxy(this._position, handler("position"));
-    this._rotation = new Vector3();
-    this.rotation = new Proxy(this._rotation, handler("rotation"));
-    this._scale = new Vector3();
-    this.scale = new Proxy(this._scale, handler("scale"));
+    this._position =Vector3.FromArray(obj.position||[0,0,0]);
+    this.position = new Proxy(this._position, handler("position") as any);
+    this._rotation =Vector3.FromArray(obj.rotation||[0,0,0]);
+    this.rotation = new Proxy(this._rotation, handler("rotation")as any);
+    this._scale =Vector3.FromArray(obj.scale||[1,1,1]);
+    this.scale = new Proxy(this._scale, handler("scale")as any);
     this.updateVectors();
   }
 
@@ -95,7 +106,7 @@ export class Feature extends EventEmitter {
     return this._content[key];
   }
   getSummary() {
-    return `position: ${this.position.toArray()}; rotaton: ${this.rotation.toArray()};  scale: ${this.scale.toArray()};`;
+    return `position: ${this.position.asArray()}; rotaton: ${this.rotation.asArray()};  scale: ${this.scale.asArray()};`;
   }
   set(dict:Partial<FeatureDescription>) {
     let d = _validateObject(dict)
@@ -131,7 +142,7 @@ export class Feature extends EventEmitter {
     let d = JSON.parse(JSON.stringify(this.description));
     delete d.id;
     delete d.uuid;
-    let c = this.parcel.createFeature(this.type);
+    let c = this.parcel.createFeature(this.type,d,true);
     c.set(d);
     return c;
   }
@@ -140,7 +151,7 @@ export class Feature extends EventEmitter {
     this.parcel.broadcast({
       type: "update",
       uuid: this.uuid,
-      content: d,
+      content: d as any,
     });
   }
 
@@ -158,7 +169,7 @@ export class Feature extends EventEmitter {
 
       animation.getKeys().unshift({
         frame: 0,
-        value: this[animation.targetProperty].clone(),
+        value: this[animation.targetProperty as 'position'|'scale'|'rotation'].clone(),
       });
 
       return animation.serialize();
@@ -170,9 +181,9 @@ export class Feature extends EventEmitter {
     });
   }
 
-  createBasicGui(id = null, options = null) {
+  createBasicGui(id = undefined, options = undefined):FeatureBasicGUI|void {
     const gui = new FeatureBasicGUI(this, options);
-    gui.id = id;
+    gui.id = id!;
     this.gui = gui;
     return gui;
   }
@@ -224,12 +235,12 @@ class Audio extends Feature {
       uuid: this.uuid,
     });
   }
-  createBasicGui() {
+  createBasicGui(id = undefined, options = undefined) {
     console.error("Gui not supported on 2D features.");
   }
 }
 class NftImage extends Feature {
-  constructor(parcel:any, obj:FeatureDescription) {
+  constructor(parcel:Parcel, obj:FeatureDescription) {
     super(parcel, obj);
   }
   /* Thottled functions */
@@ -267,14 +278,16 @@ class NftImage extends Feature {
       return r;
     }).catch((e)=>console.error('[Scripting]',e));
   }
-  createBasicGui() {
+  createBasicGui(id = undefined, options = undefined) {
     console.error("[Scripting] Gui not supported on 2D features.");
   }
 }
 
 class TextInput extends Feature {
-  constructor(parcel:any, obj:FeatureDescription) {
+  text:string
+  constructor(parcel:Parcel, obj:FeatureDescription) {
     super(parcel, obj);
+    this.text=obj.text as string
     this.on("changed", (e:{text:string}) => {
       this.text = e.text;
     });
@@ -285,7 +298,8 @@ class TextInput extends Feature {
 }
 
 class SliderInput extends Feature {
-  constructor(parcel:any, obj:FeatureDescription) {
+  value:number = 0.01
+  constructor(parcel:Parcel, obj:FeatureDescription) {
     super(parcel, obj);
     this.on("changed", (e:{value:number}) => {
       this.value = e.value;
@@ -384,7 +398,11 @@ class Youtube extends Feature {
 }
 
 class VidScreen extends Feature {
-  constructor(parcel:any, obj:FeatureDescription) {
+  screen:Uint8Array = undefined!
+  screenWidth:number = 64
+  screenHeight:number = 64
+  _interval:any
+  constructor(parcel:Parcel, obj:FeatureDescription) {
     super(parcel, obj);
     this.on("start", () => this.start());
     this.on("stop", () => this.stop());
@@ -412,7 +430,7 @@ class VidScreen extends Feature {
   }
 }
 
-Feature.create = (parcel:any, obj:FeatureDescription) => {
+Feature.create = (parcel:Parcel, obj:FeatureDescription) => {
   if (obj.type === "audio") {
     return new Audio(parcel, obj);
   } else if (obj.type === "video") {
