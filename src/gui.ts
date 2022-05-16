@@ -1,9 +1,6 @@
 import { Feature } from "./feature";
-import { guiControlType } from "./lib/types";
-import { EventEmitter } from "events";
 import { guiControl, guiControlOptions } from "./lib/guiControl";
-
-const uuid = require("uuid/v4");
+import * as uuid from 'uuid'
 
 /* @internal */
 export type GUIOptions = { billBoardMode: 1 | 2 | 0 };
@@ -17,7 +14,7 @@ export default class FeatureBasicGUI {
   showing: boolean = false;
   constructor(feature: Feature, options: GUIOptions = { billBoardMode: 2 }) {
     this.feature = feature;
-    this.uuid = uuid();
+    this.uuid = uuid.default.v4();
     this._listOfControls = [];
 
     if (options) {

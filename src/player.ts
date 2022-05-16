@@ -5,7 +5,9 @@ import { CollectibleType, PlayerDescription } from "./lib/types";
 
 import { EventEmitter } from "events";
 import Parcel from "./parcel";
-const throttle = require("lodash.throttle");
+//@ts-ignore
+import throttle from 'lodash.throttle'
+// const throttle = require("lodash.throttle");
 
 /* @internal */
 export class Player extends EventEmitter {

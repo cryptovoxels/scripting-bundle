@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
-    "sourceMap": true,
+    "sourceMap": false,
     "lib": ["es2017", "dom"],
     "target": "es5",
     "typeRoots": ["./node_modules/*"],
-    "types": ["@babylonjs/core","mocha", "node"],
+    "types": ["node"],
     "experimentalDecorators": true,
     "strict": true,
     "stripInternal": true,
+    "skipLibCheck":true,
     "downlevelIteration":true
   }
 }

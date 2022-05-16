@@ -1,8 +1,9 @@
 /* global postMessage */
 
 import { AnimationTarget, FeatureDescription } from "./lib/types";
-// const uuid = require('uuid/v4')
-const throttle = require("lodash.throttle");
+//@ts-ignore
+import throttle from 'lodash.throttle'
+// const throttle = require("lodash.throttle");
 import { EventEmitter } from "events";
 import { Animation } from "@babylonjs/core/Animations/animation";
 import { Vector3 } from "@babylonjs/core/Maths/math";

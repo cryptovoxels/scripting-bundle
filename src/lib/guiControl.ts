@@ -1,6 +1,6 @@
-import EventEmitter = require("events");
+import {EventEmitter}  from "events";
 import FeatureBasicGUI from "../gui";
-const uuid = require("uuid/v4");
+import * as uuid from 'uuid'
 /* @internal */
 export type guiControlOptions = {
   type: "button" | "text";
@@ -29,7 +29,7 @@ export class guiControl extends EventEmitter {
       };
     }
     this.gui = gui;
-    this._uuid = uuid();
+    this._uuid = uuid.default.v4();
     this.type = options.type || "text";
     this.id = options.id;
     this.text = options.text || "Text";
