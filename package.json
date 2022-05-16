@@ -7,7 +7,6 @@
   },
   "iframe": "dist/iframe_scripting_host.js",
   "hosted": "dist/hosted_scripting_host.js",
-  "bundle": "dist/voxels_scripting_bundle.js",
   "targets": {
     "iframe": {
       "source": "src/index.ts",
@@ -22,21 +21,12 @@
       "engines": {
         "browsers": "> 0.5%, last 2 versions, not dead"
       }
-    },
-    "bundle": {
-      "source": "src/index.ts",
-      "outputFormat": "esmodule",
-      "engines": {
-        "node": ">= 12"
-      }
     }
   },
   "scripts": {
     "build": "npm run build:iframe && npm run build:hosted",
     "build:iframe": "npx parcel build --target iframe --no-scope-hoist",
     "build:hosted": "npx parcel build --target hosted --no-optimize --no-scope-hoist",
-    "build:module": "npx parcel build --target bundle --no-optimize --no-scope-hoist",
-    "build:module:types": "tsc src/index.ts --target es5 --declaration --skipLibCheck --downlevelIteration --excludeDirectories node_modules --outDir ./dist --types @babylonjs/core,node --lib es2019,DOM",
     "copy:voxels": "cp ./dist/iframe_scripting_host.js ../cryptovoxels/dist/scripting-host.js",
     "copy:hosted": "cp ./dist/hosted_scripting_host.js ../grid/scripting-host.js",
     "test": "ts-mocha -r ts-node/register ./tests/**/*.test.ts --config tsconfig.json",
