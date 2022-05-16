@@ -1,5 +1,5 @@
 {
-  "name": "voxels-scripting-bundle",
+  "name": "voxels-scripting-bundler",
   "version": "0.9.0",
   "description": "",
   "engines": {
@@ -29,13 +29,14 @@
     "build:hosted": "npx parcel build --target hosted --no-optimize --no-scope-hoist",
     "copy:voxels": "cp ./dist/iframe_scripting_host.js ../cryptovoxels/dist/scripting-host.js",
     "copy:hosted": "cp ./dist/hosted_scripting_host.js ../grid/scripting-host.js",
+    "docs": "typedoc src/index.ts",
     "test": "ts-mocha -r ts-node/register ./tests/**/*.test.ts --config tsconfig.json",
     "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@babylonjs/core": "^4.2.0",
+    "@babylonjs/core": "^5.6.0",
     "lodash.throttle": "^4.1.1",
     "ndarray": "1.0.18",
     "node-fetch": "^2.6.1",

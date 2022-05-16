@@ -9,18 +9,18 @@ import { Vector3 } from "@babylonjs/core/Maths/math";
 import { _validateObject } from "./lib/validation-helpers";
 import FeatureBasicGUI from "./gui";
 import Parcel from "./parcel";
-
+/* @internal */
 export class Feature extends EventEmitter {
-    parcel:Parcel
-    _content:FeatureDescription
-    gui:any
-    _uuid:string
-    _type:string
+    readonly parcel:Parcel
+    private _content:FeatureDescription
+    gui?:FeatureBasicGUI
+    private _uuid:string
+    private _type:string
     metadata:any
 
-    _position:Vector3=Vector3.Zero()
-    _rotation:Vector3=Vector3.Zero()
-    _scale:Vector3=new Vector3(1, 1, 1)
+    private _position:Vector3=Vector3.Zero()
+    private _rotation:Vector3=Vector3.Zero()
+    private _scale:Vector3=new Vector3(1, 1, 1)
     position:Vector3
     rotation:Vector3
     scale:Vector3
@@ -34,7 +34,6 @@ export class Feature extends EventEmitter {
     this._type = obj.type
     this._uuid = obj.uuid;
     this._content = obj;
-    this.gui = null;
     const mutated = throttle(
       () => {
         const s = {
@@ -121,7 +120,7 @@ export class Feature extends EventEmitter {
     }
     this.save(d);
   }
-  updateVectors() {
+  private updateVectors() {
     this._position.set(
       this._content.position[0],
       this._content.position[1],
@@ -191,7 +190,7 @@ export class Feature extends EventEmitter {
   removeGui() {
     if (this.gui) {
       this.gui.destroy();
-      this.gui = null;
+      this.gui = undefined;
     }
   }
 
@@ -255,12 +254,12 @@ class NftImage extends Feature {
     }
   );
 
-  _getNftData(callback:Function|null = null,account_address:string|null=null) {
-    if (!this._content.url) {
+  private _getNftData(callback:Function|null = null,account_address:string|null=null) {
+    if (!this.description.url) {
       return null;
     }
-    let contract = this._content.url.split("/")[4];
-    let token = this._content.url.split("/")[5];
+    let contract = this.description.url.split("/")[4];
+    let token = this.description.url.split("/")[5];
     const api_url = `https://img.cryptovoxels.com/node/opensea?contract=${contract}&token=${token}&force_update=1${account_address!==null?`&account_address=${account_address}`:''}`;
     let promise;
     if (typeof global == "undefined" || !global.fetchJson) {

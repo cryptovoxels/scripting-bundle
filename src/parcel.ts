@@ -78,16 +78,31 @@ class AbstractParcel extends EventEmitter implements IParcel{
 /**
  * Represents the Parcel instance.
  */
+/* @internal */
 export default class Parcel extends AbstractParcel {
-  _allowedUsers:string[]
-  _isPrivate:boolean=false
-  _allowLoggedInOnly:boolean = false
+  private _allowedUsers:string[]
+  private _isPrivate:boolean=false
+  private _allowLoggedInOnly:boolean = false
+  private _initiated:boolean = false
+  /**
+   * Owner of the parcel
+   */
   owner:string = ''
+  /**
+   * A Map of all the players connected to the parcel; <token -> player>
+   */
   players:Map<string,Player>
+    /**
+   * A list of all the Feature objects in the parcel
+   */
   featuresList:Feature[]
   id:ParcelOrSpaceId
+      /**
+   * A list of all the snapshots of the parcel;
+   * Is empty until fetchSnapshots() is called.
+   */
   snapshots:Snapshot[]
-  _description:ParcelDescription|undefined
+  private _description:ParcelDescription|undefined
   constructor(id:ParcelOrSpaceId) {
     super();
     this.id = id;
@@ -107,7 +122,7 @@ export default class Parcel extends AbstractParcel {
     }
   }
   
-  onMessage(ws:ExtendedWebSocket, msg:Message) {
+  private onMessage(ws:ExtendedWebSocket, msg:Message) {
     //  if(msg.type=='click'){console.log('onMessage', msg)}
 
     // ws.player should always be defined
@@ -157,8 +172,9 @@ export default class Parcel extends AbstractParcel {
         e.normal = Vector3.FromArray(msg.event.normal);
       }
 
-      if (f && e.guiTarget && f.gui) {
-        const guiControl = f.gui.getControlByUuid(e.guiTarget);
+      const guiTarget = e.guiTarget as string | undefined
+      if (f && guiTarget && f.gui) {
+        const guiControl = f.gui.getControlByUuid(guiTarget);
         if (guiControl) {
           guiControl.emit("click", e);
           return;
@@ -214,7 +230,7 @@ export default class Parcel extends AbstractParcel {
       const data = msg.event
 
       if (!f) return;
-      let description = f._content
+      let description = f.description
 
       Array.from(Object.keys(data)).forEach((key)=>{
         description[key] = data[key]
@@ -225,7 +241,7 @@ export default class Parcel extends AbstractParcel {
     }
   }
 
-  onPlayerEnter =(player:Player)=>{
+  private onPlayerEnter =(player:Player)=>{
     // Check if player is allowed in parcel only for the `playerenter` event
 
     let isAllowed = this.isWalletAllowedIfPrivate(player.wallet)
@@ -248,19 +264,19 @@ export default class Parcel extends AbstractParcel {
 
     }
     // player is inside parcel
-    player._iswithinParcel=true
+    player.isWithinParcel=true
     this.emit(SupportedMessageTypes.PlayerEnter,{player:player})
   }
 
-  onPlayerNearby = (player:Player)=>{
+  private onPlayerNearby = (player:Player)=>{
     // player is nearby parcel
-    player._iswithinParcel=false
+    player.isWithinParcel=false
     this.emit(SupportedMessageTypes.PlayerNearby,{player:player})
   }
-
-  join(player:Player) {
+ 
+  private join(player:Player) {
     // Player here SHOULD be an object with a token and a uuid
-    if (!player._token && !player.uuid) {
+    if (!player.token && !player.uuid) {
       console.log('[Scripting] Player is invalid')
       return;
     }
@@ -271,7 +287,7 @@ export default class Parcel extends AbstractParcel {
     }
 
     //nothing
-    player._iswithinParcel=false
+    player.isWithinParcel=false
 
     // Add player to list of players
     this.players.set(player.token,player)
@@ -283,7 +299,7 @@ export default class Parcel extends AbstractParcel {
     
   }
 
-  exitParcel(player:Player){
+  private exitParcel(player:Player){
     if(!player.token){
       console.log('[Scripting] Player has no token')
       return
@@ -291,7 +307,7 @@ export default class Parcel extends AbstractParcel {
     let p = this.players.get(player.token)
 
     if(p){
-      p._iswithinParcel = false
+      p.isWithinParcel = false
       this.emit(SupportedMessageTypes.PlayerLeave, {
         player: p,
       });
@@ -299,14 +315,14 @@ export default class Parcel extends AbstractParcel {
 
   }
 
-  leave(player:Player) {
+  private leave(player:Player) {
     if(!player.token){
       console.log('[Scripting] Player has no token')
       return
     }
     let p = this.players.get(player.token)
     if(p){
-      p._iswithinParcel = false
+      p.isWithinParcel = false
       this.emit("playeraway", {
         player: p
       });
@@ -314,7 +330,11 @@ export default class Parcel extends AbstractParcel {
 
     this.players.delete(player.token)
   }
-
+  /**
+   * Broadcast a message to the client.
+   * Note: this is mainly used internally.
+   * @param message 
+   */
   broadcast(message:ParcelBroadcastMessage) {
     const packet = JSON.stringify(message); // console.log('broadcast', packet)
 
@@ -348,7 +368,10 @@ export default class Parcel extends AbstractParcel {
       )
       .join("");
   }
-
+  /**
+   * Parse a parcel object
+   * @param parcel an object {id:string,features:Feature[]}
+   */
   parse(parcel:ParcelDescription) {
     Object.assign(this, parcel); // Create features array
     this._description = parcel
@@ -364,7 +387,7 @@ export default class Parcel extends AbstractParcel {
    * Get a player by its UUID
    * 
    * @param uuid a string
-   * @returns a player or Undefined
+   * @returns a {@link Player} or Undefined
    */
   getPlayerByUuid(uuid:string) {
     if(typeof uuid !=='string'){
@@ -384,7 +407,7 @@ export default class Parcel extends AbstractParcel {
    * Get a player by its wallet
    * 
    * @param wallet the player's wallet
-   * @returns a Player object or undefined
+   * @returns a {@link Player} object or undefined
    */
   getPlayerByWallet(wallet:string) {
     if(typeof wallet !=='string'){
@@ -399,27 +422,50 @@ export default class Parcel extends AbstractParcel {
     }
     return null
   }
-
+  /**
+   * Get a feature by its UUID
+   * 
+   * @param uuid the feature's UUID
+   * @returns a {@link Feature} or Undefined
+   */
   getFeatureByUuid(uuid:string) {
     return this.featuresList.find((f) => f.uuid === uuid);
   }
-
+  /**
+   * Get a feature by its ID
+   * 
+   * @param id the feature's ID
+   * @returns a {@link Feature} or undefined
+   */
   getFeatureById(id:string) {
     return this.featuresList.find((f) => f.id === id);
   }
-
+  /**
+   * Get a list of all features
+   * @returns {@link Feature}[]
+   */
   getFeatures() {
     return this.featuresList;
   }
-
+  /**
+   * Get a list of all features of the given type
+   * @returns {@link Feature}[]
+   */
   getFeaturesByType(type:string) {
     return this.featuresList.filter((f) => f.type === type);
   }
-
+  /**
+   * Get a list of all players connected to the parcel
+   * @returns {@link Player}[]
+   */
   getPlayers() {
     return this.players;
   }
-
+  /**
+   * Get a list of all players that are within the parcel
+   * A player within the parcel is player that's sent the event 'playerenter'
+   * @returns {@link Player}[]
+   */
   getPlayersWithinParcel() {
 
     let playersInside:Player[] = []
@@ -433,9 +479,22 @@ export default class Parcel extends AbstractParcel {
     return playersInside
   }
 
-  /* Thottled functions */
+  /**
+   * Throttled function to fetch the snapshots of the parcel;
+   * @param callback a Callback expecting an array of objects.
+   * Eg:
+   * ```typescript
+   * function myCallback(snapshots){
+   *    parcel.setSnapshot(snapshots[0].id)
+   *  }
+   *
+   *  feature.on('click',e=>{
+   *    parcel.fetchSnapshots(myCallback)
+   *  })
+   * ```
+   */
   fetchSnapshots = throttle(
-    (callback:Function|null = null) => {
+    (callback?:(snapshots:any[])=>void) => {
       this._fetchSnapshots(callback);
     },
     500,
@@ -443,7 +502,12 @@ export default class Parcel extends AbstractParcel {
       leading: false,
       trailing: true,
     }
-  );
+  ) as (callback?:(snapshots:Snapshot[])=>void)=>void;
+    /**
+   * Sets the parcel content to the given snapshot index.
+   * This should be called after 'fetchSnaphots' has been called.
+   * @param index the id of the snapshot
+   */
   setSnapshot = throttle(
     (index:number) => {
       this._setSnapshot(index);
@@ -453,9 +517,9 @@ export default class Parcel extends AbstractParcel {
       leading: false,
       trailing: true,
     }
-  );
+  ) as (snapshot_id:number)=>void;
 
-  _fetchSnapshots(callback:Function|null = null) {
+  private _fetchSnapshots(callback?:(snapshots:Snapshot[])=>void):void {
     const api_url = `https://www.cryptovoxels.com/api/parcels/${this.id}/snapshots.json`;
     let promise;
     if (typeof global == "undefined" || !global.fetchJson) {
@@ -477,7 +541,7 @@ export default class Parcel extends AbstractParcel {
     });
   }
 
-  _setSnapshot(snapshot_id:number) {
+  private _setSnapshot(snapshot_id:number) {
 
     if (this.snapshots.length == 0) {
       console.error("[Scripting] No snapshots for this parcel, try calling parcel.fetchSnapshots first");
@@ -514,7 +578,12 @@ export default class Parcel extends AbstractParcel {
       parcel: p,
     });
   }
-
+/**
+ * Create a feature
+ * @param type a valid feature type, eg: 'vox-model'
+ * @param description an optional object.
+ * @returns {@link Feature}
+ */
   createFeature(type:string, description?:FeatureDescription,shouldBroadcast=true) {
     const feature = Feature.create(
       this,
@@ -535,12 +604,15 @@ export default class Parcel extends AbstractParcel {
       this.broadcast({
         type: "create",
         uuid: feature.uuid,
-        content: feature._content,
+        content: feature.description,
       });
     }
     return feature;
   }
-
+/**
+ * Deletes a feature and removes it from the parcel
+ * @param f {@link Feature}
+ */
   removeFeature(f:Feature,shouldBroadcast=true) {
     if(shouldBroadcast){
       this.broadcast({
@@ -558,7 +630,10 @@ export default class Parcel extends AbstractParcel {
   }
 
   start() {
-
+    if(this._initiated){
+      return
+    }
+    this._initiated = true
     const ws = {
       readyState: 1,
       player:undefined
@@ -707,15 +782,16 @@ export default class Parcel extends AbstractParcel {
     return this._allowedUsers.indexOf(wallet.toLowerCase())!==-1
   }
 }
+/* @internal */
 export class Space extends Parcel {
   constructor(id:ParcelOrSpaceId) {
     super(id);
   }
-  
-  _fetchSnapshots() {
+  fetchSnapshots=(callback:Function|null = null)=> {
     console.log('[Scripting] fetchsnapshot() Not supported in spaces')
   }
-  _setSnapshot() {
+
+  setSnapshot=()=> {
       console.log('[Scripting] setSnapshot() Not supported in spaces')
   }
 

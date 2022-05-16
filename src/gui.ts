@@ -1,16 +1,19 @@
 import { Feature } from "./feature";
+import { guiControlType } from "./lib/types";
+import { EventEmitter } from "events";
+import { guiControl, guiControlOptions } from "./lib/guiControl";
 
 const uuid = require("uuid/v4");
-const EventEmitter = require("events");
 
-type GUIOptions = { billBoardMode: 1|2|0 }
-
+/* @internal */
+export type GUIOptions = { billBoardMode: 1|2|0 }
+/* @internal */
 export default class FeatureBasicGUI {
   billBoardMode = 1;
   feature:Feature
   uuid:string
   id:string=undefined!
-  _listOfControls:guiControl[]
+  private _listOfControls:guiControl[]
   showing:boolean= false;
   constructor(feature:Feature, options:GUIOptions = { billBoardMode: 2 }) {
     this.feature = feature;
@@ -53,7 +56,7 @@ export default class FeatureBasicGUI {
     return control;
   }
 
-  addText(text:string|null = null, positionInGrid:[number,number] = [0, 0], id:string|null = null) {
+  addText(text:string|null = null, positionInGrid:[number,number] = [0, 0], id?:string) {
     if (!text) {
       text = "Text";
     }
@@ -73,7 +76,7 @@ export default class FeatureBasicGUI {
     return control;
   }
 
-  _replacesOldControl(control:guiControl) {
+  private _replacesOldControl(control:guiControl) {
     // Replace a control if the position is the same as another.
     let controlToReplace = this.getControlByPosition(control.positionInGrid);
     if (controlToReplace) {
@@ -85,7 +88,7 @@ export default class FeatureBasicGUI {
   }
 
   get defaultControl():guiControlOptions {
-    return { type:'text', text: "Text", id: null, positionInGrid: [0, 0] };
+    return { type:'text', text: "Text", id: undefined, positionInGrid: [0, 0] };
   }
 
   getControlById(id:string) {
@@ -104,12 +107,17 @@ export default class FeatureBasicGUI {
     );
   }
 
-  get listOfControls() {
-    const _listOfControls = Array.from(this._listOfControls);
+  serialize(){
+    const listOfControls = Array.from(this._listOfControls).map((control)=>control.summary)
+    return {
+      uuid: this.uuid,
+      listOfControls: listOfControls,
+      billBoardMode: this.billBoardMode,
+    }
+  }
 
-    return _listOfControls.map((control) => {
-      return control.summary;
-    });
+  get listOfControls():guiControl[]{
+    return this._listOfControls
   }
 
   show() {
@@ -123,11 +131,7 @@ export default class FeatureBasicGUI {
     this.feature.parcel.broadcast({
       type: "create-feature-gui",
       uuid: this.feature.uuid,
-      gui: {
-        uuid: this.uuid,
-        listOfControls: this.listOfControls,
-        billBoardMode: this.billBoardMode,
-      },
+      gui: this.serialize(),
     });
     this.showing = true;
   }
@@ -141,68 +145,3 @@ export default class FeatureBasicGUI {
     this.showing = false;
   }
 }
-
-type guiControlOptions = {
-    type: 'button'|'text'
-    id: string|null
-    text?: string
-    fontSizePx?: string
-    height?: string | number
-    positionInGrid?: [number, number]
-  }
-
-class guiControl extends EventEmitter {
-    _uuid:string
-  constructor(gui:FeatureBasicGUI, options:guiControlOptions) {
-    super();
-    if (!options) {
-      options = {
-        type: "text",
-        id: null,
-        text: "Text",
-        positionInGrid: [0, 0],
-      };
-    }
-    this.gui = gui;
-    this._uuid = uuid();
-    this.type = options.type || "text";
-    this.id = options.id;
-    this.text = options.text || "Text";
-    this.positionInGrid = options.positionInGrid || [0, 0];
-  }
-
-  get uuid() {
-    return this._uuid;
-  }
-
-  get summary() {
-    return {
-      uuid: this._uuid,
-      type: this.type,
-      id: this.id,
-      text: this.text,
-      positionInGrid: this.positionInGrid,
-    };
-  }
-
-  remove() {
-    if (this.gui && this.gui._listOfControls.length > 0) {
-      this.gui._listOfControls.splice(
-        this.gui._listOfControls.indexOf(this),
-        1
-      );
-    }
-    this.gui.show();
-  }
-
-  update() {
-    if (this.gui && this.gui.showing) {
-      this.gui.feature.parcel.broadcast({
-        type: "update-feature-gui",
-        uuid: this.gui.feature.uuid,
-        control: this.summary,
-      });
-    }
-  }
-}
-

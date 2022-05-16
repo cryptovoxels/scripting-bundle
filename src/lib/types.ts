@@ -35,6 +35,7 @@ export type ParcelBroadcastMessage = {
     animations?:any
     coordinates?:string
     reason?:string
+    control?:guiControlType
     gui?:guiBatchInfo
 }
 
@@ -47,7 +48,7 @@ export type guiBatchInfo = {
 export type guiControlType={
     uuid:string
     type: 'button'|'text'
-    id: string|null
+    id?: string
     text?: string
     fontSizePx?: string
     height?: string | number

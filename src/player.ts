@@ -7,18 +7,18 @@ import {EventEmitter} from 'events';
 import Parcel from "./parcel";
 const throttle = require("lodash.throttle");
 
-
+/* @internal */
 export class Player extends EventEmitter {
     collectibles:CollectibleType[]
-    _token:string
-    _iswithinParcel:boolean
+    private _token:string
+    private _iswithinParcel:boolean
     uuid:string
     parcel:Parcel
     name:string |undefined
     wallet:string |undefined
     position:Vector3
     rotation:Vector3
-    _numTeleport:number = 0
+    private _numTeleport:number = 0
   constructor(description:PlayerDescription, parcel:Parcel) {
     super();
     Object.assign(this, description);
@@ -63,6 +63,9 @@ export class Player extends EventEmitter {
 
   get isWithinParcel(){
     return this._iswithinParcel
+  }
+  set isWithinParcel(within:boolean){
+    this._iswithinParcel = !!within
   }
 
   get token(){

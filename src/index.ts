@@ -8,11 +8,12 @@ import {
   Matrix,
 } from "@babylonjs/core/Maths/math";
 
-import { Animation } from "@babylonjs/core/Animations/animation";
+import { Animation} from "@babylonjs/core/Animations/animation";
 import { emojis as emojiList } from "./helpers";
-import { Feature } from "./feature";
+import { Feature} from "./feature";
 
-import Parcel, { Space } from "./parcel";
+import Parcel from "./parcel";
+import{ Space} from "./parcel";
 
 
 function getGlobal() {
@@ -60,7 +61,7 @@ if (G) {
   G.animations = [];
 }
 
-export default {
+const scriptingEngine = {
   Parcel,
   Space,
   Feature,
@@ -70,7 +71,8 @@ export default {
   Vector2,
   Color3,
   Matrix,
-};
+}
+export default scriptingEngine;
 
 if (typeof self !== "undefined") {
   Object.assign(self, {

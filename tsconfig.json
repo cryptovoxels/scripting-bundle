@@ -7,6 +7,7 @@
     "types": ["@babylonjs/core","mocha", "node"],
     "experimentalDecorators": true,
     "strict": true,
+    "stripInternal": true,
     "downlevelIteration":true
   }
 }
