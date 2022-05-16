@@ -30,8 +30,8 @@ export class Player extends EventEmitter {
     this.name = description && description.name;
     this.wallet = description && description.wallet;
     this._iswithinParcel = false;
-    this.position = new Vector3();
-    this.rotation = new Vector3();
+    this.position =Vector3.Zero();
+    this.rotation = Vector3.Zero();
     this.collectibles = (description && description.collectibles) || [];
   }
 

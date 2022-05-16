@@ -1,17 +1,17 @@
 import { Vector3 } from "@babylonjs/core";
 import assert from "assert";
-import scriptingEngine from "../src/index"
-import { Player } from "../src/player";
-const Parcel = scriptingEngine.Parcel
+import Parcel from "../src/parcel";
+
 import * as p from './parcel.json'
+import { overrideParcel } from "./test_lib";
 //@ts-ignore
 const json = p.default.parcel
 
 describe('Test Parcel', function() {
-  let parcel:InstanceType<typeof Parcel>;
-
+  let parcel:Parcel & {receiveMsg: (obj: any) => any};
+  const playerDetails = {wallet:'ded',uuid:'wdwdwd',_token:'ded'}
   beforeAll(()=>{
-    parcel = new Parcel(2)
+    parcel = overrideParcel(new Parcel(2))
   })
   it('Parcel Object has id 2', function() {
     expect(parcel.id).toEqual(2)
@@ -73,21 +73,62 @@ describe('Test Parcel', function() {
     assert.equal(1, parcel.getFeaturesByType('richtext').length)
   })
 
-  test('getPlayers', () => {
+  test('Player joins and leave', () => {
     assert.equal(0, parcel.getPlayers().size)
 
-    let p = new Player({wallet:'ded',uuid:'wdwdwd',_token:'lol'},parcel)
-    //@ts-ignore
-    parcel.newFunction = (player:Player)=>{
-      //@ts-ignore
-      parcel.join(player)
-    }
-    //@ts-ignore
-    parcel.newFunction(p)
-    //@ts-ignore
-    parcel.newFunction = null
-    
+    parcel.receiveMsg({type:'join',player:playerDetails})
     assert.equal(1, parcel.getPlayers().size)
+
+    parcel.receiveMsg({type:'playeraway',player:playerDetails})
+
+    assert.equal(0, parcel.getPlayers().size)
+  })
+
+  test('Parcel events', () => {
+    const getplayer = ()=>{
+      return parcel.getPlayerByUuid(playerDetails.uuid)
+    }
+    parcel.on('join',()=>{
+      assert.equal(1, parcel.getPlayers().size)
+    })
+    parcel.on('playernearby',()=>{
+      let p =getplayer()
+      assert.ok(p)
+      expect(p.isWithinParcel).toBeFalsy()
+    })
+    parcel.on('playerenter',()=>{
+      let p =getplayer()
+      assert.ok(p)
+      expect(p.isWithinParcel).toBeTruthy()
+    })
+    parcel.on('playerleave',()=>{
+      let p =getplayer()
+      assert.ok(p)
+      expect(p.isWithinParcel).toBeFalsy()
+    })
+    // player re-enters the parcel
+    parcel.on('playerenter',()=>{
+      let p =getplayer()
+      assert.ok(p)
+      expect(p.isWithinParcel).toBeTruthy()
+    })
+    parcel.on('playeraway',(done)=>{
+      let p =getplayer()
+      assert.ok(p)
+      expect(p.isWithinParcel).toBeFalsy()
+      setTimeout(()=>{
+        let p =getplayer()
+        expect(p).toBeUndefined()
+        done()
+      },100)
+    })
+
+    parcel.receiveMsg({type:'join',player:playerDetails})
+    parcel.receiveMsg({type:'playernearby',player:playerDetails})
+    parcel.receiveMsg({type:'playerenter',player:playerDetails})
+    parcel.receiveMsg({type:'playerleave',player:playerDetails})
+    parcel.receiveMsg({type:'playerenter',player:playerDetails})
+    parcel.receiveMsg({type:'playeraway',player:playerDetails})
   })
   
   
