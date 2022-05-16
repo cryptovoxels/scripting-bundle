@@ -16,3 +16,9 @@ https://github.com/cryptovoxels/Voxels-Scripting-Server/docs/index.html
 ## Contributing
 
 1. Clone the repo.
+
+2. Create a branch & Make your changes
+
+3. Run `npm run build` and `npm run format` to (1) make sure the project still builds and (2) format your code.
+
+4. Make a pull request on github
