@@ -1,40 +1,65 @@
 {
-  "name": "cryptovoxels",
+  "name": "voxels-scripting-bundler",
   "version": "0.9.0",
   "description": "",
-  "main": "index.js",
+  "engines": {
+    "node": ">= 14"
+  },
+  "iframe": "dist/iframe_scripting_host.js",
+  "hosted": "dist/hosted_scripting_host.js",
+  "targets": {
+    "iframe": {
+      "source": "src/index.ts",
+      "outputFormat": "global",
+      "engines": {
+        "browsers": "chrome 80"
+      }
+    },
+    "hosted": {
+      "source": "src/index.ts",
+      "outputFormat": "global",
+      "engines": {
+        "browsers": "> 0.5%, last 2 versions, not dead"
+      }
+    }
+  },
   "scripts": {
-    "build": "webpack --config webpack.config.js",
-    "copy:cryptovoxels": "cp ./dist/scripting-host.js ../cryptovoxels/dist/scripting-host.js",
-    "copy:grid": "cp ./dist/scripting-host.js ../grid/scripting-host.js",
-    "build:min": "webpack --config webpack-min.config.js",
-    "test": "babel-tape-runner tests/*.js && standard"
+    "build": "npm run build:iframe && npm run build:hosted",
+    "build:iframe": "npx parcel build --target iframe --no-scope-hoist",
+    "build:hosted": "npx parcel build --target hosted --no-optimize --no-scope-hoist",
+    "copy:voxels": "cp ./dist/iframe_scripting_host.js ../cryptovoxels/dist/scripting-host.js",
+    "copy:hosted": "cp ./dist/hosted_scripting_host.js ../grid/scripting-host.js",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "docs": "typedoc",
+    "test": "ts-mocha -r ts-node/register ./tests/**/*.test.ts --config tsconfig.json",
+    "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@babylonjs/core": "^4.0.3",
-    "babel-tape-runner": "^3.0.0",
-    "lodash": "^4.17.15",
+    "@babylonjs/core": "^5.6.0",
     "lodash.throttle": "^4.1.1",
     "ndarray": "1.0.18",
     "node-fetch": "^2.6.1",
+    "parcel": "^2.5.0",
     "tinyify": "^2.5.1",
     "uuid": "3.3.2",
     "ws": "7.4.6"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.15.0",
-    "babel-loader": "^8.2.2",
-    "standard": "12.0.1",
+    "@types/chai": "^4.3.1",
+    "@types/jest": "^27.5.1",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^17.0.33",
+    "chai": "^4.3.6",
+    "events": "^3.3.0",
+    "mocha": "^9.2.2",
+    "nyc": "^15.1.0",
+    "prettier": "^2.6.2",
     "tape": "4.9.1",
-    "terser-webpack-plugin": "^5.2.0",
-    "webpack": "^5.50.0",
-    "webpack-cli": "^4.8.0"
-  },
-  "standard": {
-    "ignore": [
-      "bundle*"
-    ]
+    "ts-mocha": "^9.0.2",
+    "ts-node": "^10.7.0",
+    "typedoc": "^0.22.15",
+    "typescript": "^4.6.3"
   }
 }

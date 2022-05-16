@@ -1,0 +1,10 @@
+{
+    "entryPoints":"src",
+    "entryPointStrategy":"expand",
+    "excludePrivate":true,
+    "name": "Voxels-Scripting-Engine",
+    "out": "docs",
+    "excludeInternal":false,
+    "exclude":"node_modules/**/*",
+    "preserveWatchOutput": true
+  }

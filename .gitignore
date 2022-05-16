@@ -2,4 +2,5 @@
 bundle.js*
 bundle.min.js
 node_modules
-dist/
+dist
+.parcel-cache
