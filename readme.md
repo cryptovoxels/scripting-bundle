@@ -21,4 +21,6 @@ https://github.com/cryptovoxels/Voxels-Scripting-Server/docs/index.html
 
 3. Run `npm run build` and `npm run format` to (1) make sure the project still builds and (2) format your code.
 
-4. Make a pull request on github
+4. Make a pull request on github.
+
+If you've changed code inside `src/` please run `npm run docs` and commit the changes.
