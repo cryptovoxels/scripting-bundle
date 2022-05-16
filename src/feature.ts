@@ -11,27 +11,27 @@ import FeatureBasicGUI from "./gui";
 import Parcel from "./parcel";
 /* @internal */
 export class Feature extends EventEmitter {
-    readonly parcel:Parcel
-    private _content:FeatureDescription
-    gui?:FeatureBasicGUI
-    private _uuid:string
-    private _type:string
-    metadata:any
+  readonly parcel: Parcel;
+  private _content: FeatureDescription;
+  gui?: FeatureBasicGUI;
+  private _uuid: string;
+  private _type: string;
+  metadata: any;
 
-    private _position:Vector3=Vector3.Zero()
-    private _rotation:Vector3=Vector3.Zero()
-    private _scale:Vector3=new Vector3(1, 1, 1)
-    position:Vector3
-    rotation:Vector3
-    scale:Vector3
+  private _position: Vector3 = Vector3.Zero();
+  private _rotation: Vector3 = Vector3.Zero();
+  private _scale: Vector3 = new Vector3(1, 1, 1);
+  position: Vector3;
+  rotation: Vector3;
+  scale: Vector3;
 
-    static create:(parcel:Parcel, obj:FeatureDescription)=>Feature
-    onClick?:()=>void
-  constructor(parcel:Parcel, obj:FeatureDescription) {
+  static create: (parcel: Parcel, obj: FeatureDescription) => Feature;
+  onClick?: () => void;
+  constructor(parcel: Parcel, obj: FeatureDescription) {
     super();
     this.metadata = {};
     this.parcel = parcel;
-    this._type = obj.type
+    this._type = obj.type;
     this._uuid = obj.uuid;
     this._content = obj;
     const mutated = throttle(
@@ -57,23 +57,23 @@ export class Feature extends EventEmitter {
       }
     );
 
-    const handler= (attr:any) => ({
-      set(target:Record<string,unknown>, key:string, value:number) {
-        if(typeof value!=='number'){
-          console.error(`[Scripting] ${key} is not a number`)
-          return false
+    const handler = (attr: any) => ({
+      set(target: Record<string, unknown>, key: string, value: number) {
+        if (typeof value !== "number") {
+          console.error(`[Scripting] ${key} is not a number`);
+          return false;
         }
         target[key] = value;
         mutated();
         return true;
       },
     });
-    this._position =Vector3.FromArray(obj.position||[0,0,0]);
+    this._position = Vector3.FromArray(obj.position || [0, 0, 0]);
     this.position = new Proxy(this._position, handler("position") as any);
-    this._rotation =Vector3.FromArray(obj.rotation||[0,0,0]);
-    this.rotation = new Proxy(this._rotation, handler("rotation")as any);
-    this._scale =Vector3.FromArray(obj.scale||[1,1,1]);
-    this.scale = new Proxy(this._scale, handler("scale")as any);
+    this._rotation = Vector3.FromArray(obj.rotation || [0, 0, 0]);
+    this.rotation = new Proxy(this._rotation, handler("rotation") as any);
+    this._scale = Vector3.FromArray(obj.scale || [1, 1, 1]);
+    this.scale = new Proxy(this._scale, handler("scale") as any);
     this.updateVectors();
   }
 
@@ -86,7 +86,7 @@ export class Feature extends EventEmitter {
   }
 
   get type() {
-    return this._type
+    return this._type;
   }
 
   get description() {
@@ -98,17 +98,17 @@ export class Feature extends EventEmitter {
   }
 
   set url(uri) {
-    this.set({"url":uri});
+    this.set({ url: uri });
   }
 
-  get(key:string) {
+  get(key: string) {
     return this._content[key];
   }
   getSummary() {
     return `position: ${this.position.asArray()}; rotaton: ${this.rotation.asArray()};  scale: ${this.scale.asArray()};`;
   }
-  set(dict:Partial<FeatureDescription>) {
-    let d = _validateObject(dict)
+  set(dict: Partial<FeatureDescription>) {
+    let d = _validateObject(dict);
     Object.assign(this._content, d);
     let keys = Array.from(Object.keys(d)) || [];
     if (
@@ -141,12 +141,12 @@ export class Feature extends EventEmitter {
     let d = JSON.parse(JSON.stringify(this.description));
     delete d.id;
     delete d.uuid;
-    let c = this.parcel.createFeature(this.type,d,true);
+    let c = this.parcel.createFeature(this.type, d, true);
     c.set(d);
     return c;
   }
-  save(dict:Partial<FeatureDescription>) {
-    let d = _validateObject(dict)
+  save(dict: Partial<FeatureDescription>) {
+    let d = _validateObject(dict);
     this.parcel.broadcast({
       type: "update",
       uuid: this.uuid,
@@ -154,21 +154,31 @@ export class Feature extends EventEmitter {
     });
   }
 
-  help(){
-    console.log(`[Scripting] Visit https://wiki.cryptovoxels.com/features/${this.type} for scripting help on this feature`)
+  help() {
+    console.log(
+      `[Scripting] Visit https://wiki.cryptovoxels.com/features/${this.type} for scripting help on this feature`
+    );
   }
 
-  createAnimation(key:AnimationTarget) {
-    return new Animation(`scripting/animation/${this.uuid}`, key, 30, Animation.ANIMATIONTYPE_VECTOR3);
+  createAnimation(key: AnimationTarget) {
+    return new Animation(
+      `scripting/animation/${this.uuid}`,
+      key,
+      30,
+      Animation.ANIMATIONTYPE_VECTOR3
+    );
   }
 
-  startAnimations(animationArray:Animation[]) {
+  startAnimations(animationArray: Animation[]) {
     const animations = animationArray.map((a) => {
       const animation = a.clone();
 
       animation.getKeys().unshift({
         frame: 0,
-        value: this[animation.targetProperty as 'position'|'scale'|'rotation'].clone(),
+        value:
+          this[
+            animation.targetProperty as "position" | "scale" | "rotation"
+          ].clone(),
       });
 
       return animation.serialize();
@@ -180,7 +190,7 @@ export class Feature extends EventEmitter {
     });
   }
 
-  createBasicGui(id = undefined, options = undefined):FeatureBasicGUI|void {
+  createBasicGui(id = undefined, options = undefined): FeatureBasicGUI | void {
     const gui = new FeatureBasicGUI(this, options);
     gui.id = id!;
     this.gui = gui;
@@ -201,18 +211,18 @@ export class Feature extends EventEmitter {
 }
 
 class Audio extends Feature {
-  isPlaying=false;
+  isPlaying = false;
 
-  onClick=()=>{
-    if(this.isPlaying){
-      this.pause()
-    }else{
-      this.play()
+  onClick = () => {
+    if (this.isPlaying) {
+      this.pause();
+    } else {
+      this.play();
     }
-  }
+  };
 
   play() {
-    this.isPlaying=true
+    this.isPlaying = true;
     this.parcel.broadcast({
       type: "play",
       uuid: this.uuid,
@@ -220,7 +230,7 @@ class Audio extends Feature {
   }
 
   pause() {
-    this.isPlaying=false
+    this.isPlaying = false;
     this.parcel.broadcast({
       type: "pause",
       uuid: this.uuid,
@@ -228,7 +238,7 @@ class Audio extends Feature {
   }
 
   stop() {
-    this.isPlaying=false
+    this.isPlaying = false;
     this.parcel.broadcast({
       type: "stop",
       uuid: this.uuid,
@@ -239,7 +249,7 @@ class Audio extends Feature {
   }
 }
 class NftImage extends Feature {
-  constructor(parcel:Parcel, obj:FeatureDescription) {
+  constructor(parcel: Parcel, obj: FeatureDescription) {
     super(parcel, obj);
   }
   /* Thottled functions */
@@ -254,13 +264,18 @@ class NftImage extends Feature {
     }
   );
 
-  private _getNftData(callback:Function|null = null,account_address:string|null=null) {
+  private _getNftData(
+    callback: Function | null = null,
+    account_address: string | null = null
+  ) {
     if (!this.description.url) {
       return null;
     }
     let contract = this.description.url.split("/")[4];
     let token = this.description.url.split("/")[5];
-    const api_url = `https://img.cryptovoxels.com/node/opensea?contract=${contract}&token=${token}&force_update=1${account_address!==null?`&account_address=${account_address}`:''}`;
+    const api_url = `https://img.cryptovoxels.com/node/opensea?contract=${contract}&token=${token}&force_update=1${
+      account_address !== null ? `&account_address=${account_address}` : ""
+    }`;
     let promise;
     if (typeof global == "undefined" || !global.fetchJson) {
       /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
@@ -268,14 +283,16 @@ class NftImage extends Feature {
     } else {
       promise = fetchJson(api_url);
     }
-    return promise.then((r) => {
-      if (callback) {
-        callback(r);
-      }else{
-        console.error('[Scripting] No callback given to "getNftData"')
-      }
-      return r;
-    }).catch((e)=>console.error('[Scripting]',e));
+    return promise
+      .then((r) => {
+        if (callback) {
+          callback(r);
+        } else {
+          console.error('[Scripting] No callback given to "getNftData"');
+        }
+        return r;
+      })
+      .catch((e) => console.error("[Scripting]", e));
   }
   createBasicGui(id = undefined, options = undefined) {
     console.error("[Scripting] Gui not supported on 2D features.");
@@ -283,11 +300,11 @@ class NftImage extends Feature {
 }
 
 class TextInput extends Feature {
-  text:string
-  constructor(parcel:Parcel, obj:FeatureDescription) {
+  text: string;
+  constructor(parcel: Parcel, obj: FeatureDescription) {
     super(parcel, obj);
-    this.text=obj.text as string
-    this.on("changed", (e:{text:string}) => {
+    this.text = obj.text as string;
+    this.on("changed", (e: { text: string }) => {
       this.text = e.text;
     });
   }
@@ -297,10 +314,10 @@ class TextInput extends Feature {
 }
 
 class SliderInput extends Feature {
-  value:number = 0.01
-  constructor(parcel:Parcel, obj:FeatureDescription) {
+  value: number = 0.01;
+  constructor(parcel: Parcel, obj: FeatureDescription) {
     super(parcel, obj);
-    this.on("changed", (e:{value:number}) => {
+    this.on("changed", (e: { value: number }) => {
       this.value = e.value;
     });
   }
@@ -309,15 +326,15 @@ class SliderInput extends Feature {
   }
 }
 class Video extends Feature {
-  isPlaying=false;
+  isPlaying = false;
 
-  onClick=()=>{
-    if(this.isPlaying){
-      this.pause()
-    }else{
-      this.play()
+  onClick = () => {
+    if (this.isPlaying) {
+      this.pause();
+    } else {
+      this.play();
     }
-  }
+  };
 
   play() {
     this.parcel.broadcast({
@@ -345,23 +362,23 @@ class Video extends Feature {
 }
 
 class Youtube extends Feature {
-  isPlaying=false;
-  isPaused=false;
+  isPlaying = false;
+  isPaused = false;
 
-  onClick=()=>{
-    if(this.isPlaying){
-      if(this.isPaused){
-        this.unpause()
-      }else{
-        this.pause()
+  onClick = () => {
+    if (this.isPlaying) {
+      if (this.isPaused) {
+        this.unpause();
+      } else {
+        this.pause();
       }
-    }else{
-      this.play()
+    } else {
+      this.play();
     }
-  }
+  };
 
   play() {
-    this.isPlaying=true
+    this.isPlaying = true;
     this.parcel.broadcast({
       type: "play",
       uuid: this.uuid,
@@ -369,7 +386,7 @@ class Youtube extends Feature {
   }
 
   pause() {
-    this.isPaused=true
+    this.isPaused = true;
     this.parcel.broadcast({
       type: "pause",
       uuid: this.uuid,
@@ -377,7 +394,7 @@ class Youtube extends Feature {
   }
 
   unpause() {
-    this.isPaused=false
+    this.isPaused = false;
     this.parcel.broadcast({
       type: "unpause",
       uuid: this.uuid,
@@ -385,7 +402,7 @@ class Youtube extends Feature {
   }
 
   stop() {
-    this.isPlaying=false
+    this.isPlaying = false;
     this.parcel.broadcast({
       type: "stop",
       uuid: this.uuid,
@@ -397,11 +414,11 @@ class Youtube extends Feature {
 }
 
 class VidScreen extends Feature {
-  screen:Uint8Array = undefined!
-  screenWidth:number = 64
-  screenHeight:number = 64
-  _interval:any
-  constructor(parcel:Parcel, obj:FeatureDescription) {
+  screen: Uint8Array = undefined!;
+  screenWidth: number = 64;
+  screenHeight: number = 64;
+  _interval: any;
+  constructor(parcel: Parcel, obj: FeatureDescription) {
     super(parcel, obj);
     this.on("start", () => this.start());
     this.on("stop", () => this.stop());
@@ -429,7 +446,7 @@ class VidScreen extends Feature {
   }
 }
 
-Feature.create = (parcel:Parcel, obj:FeatureDescription) => {
+Feature.create = (parcel: Parcel, obj: FeatureDescription) => {
   if (obj.type === "audio") {
     return new Audio(parcel, obj);
   } else if (obj.type === "video") {

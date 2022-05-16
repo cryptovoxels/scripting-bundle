@@ -8,13 +8,12 @@ import {
   Matrix,
 } from "@babylonjs/core/Maths/math";
 
-import { Animation} from "@babylonjs/core/Animations/animation";
+import { Animation } from "@babylonjs/core/Animations/animation";
 import { emojis as emojiList } from "./helpers";
-import { Feature} from "./feature";
+import { Feature } from "./feature";
 
 import Parcel from "./parcel";
-import{ Space} from "./parcel";
-
+import { Space } from "./parcel";
 
 function getGlobal() {
   if (typeof global !== "undefined") {
@@ -26,13 +25,12 @@ function getGlobal() {
   }
 }
 
-
 // Register of the singletons we still have bound to window
 declare global {
-    function fetchJson(url:string): Promise<any>;
-    var emojis:string[];
-    var animations:any[];
-    var global:typeof global
+  function fetchJson(url: string): Promise<any>;
+  var emojis: string[];
+  var animations: any[];
+  var global: typeof global;
 }
 
 // the grid is usually `global` and the iframe when the script is not hosted is usually `self`;
@@ -42,7 +40,7 @@ const G = getGlobal();
 if (G) {
   //@ts-expect-error
   G.setInterval = (function (setInterval) {
-    return function (func:TimerHandler, time:number, ...args:any[]) {
+    return function (func: TimerHandler, time: number, ...args: any[]) {
       let t = time;
       if (isNaN(parseInt(time.toString(), 10))) {
         console.error("[Scripting] setInterval interval is invalid");
@@ -53,7 +51,7 @@ if (G) {
         console.log("[Scripting] setInterval minimum is 30ms");
       }
       //@ts-ignore
-      return setInterval.call(G, func, t,...args) ;
+      return setInterval.call(G, func, t, ...args);
     };
   })(G.setInterval);
 
@@ -71,7 +69,7 @@ const scriptingEngine = {
   Vector2,
   Color3,
   Matrix,
-}
+};
 export default scriptingEngine;
 
 if (typeof self !== "undefined") {

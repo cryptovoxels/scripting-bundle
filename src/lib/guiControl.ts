@@ -1,24 +1,24 @@
-import EventEmitter = require("events")
-import FeatureBasicGUI from "../gui"
+import EventEmitter = require("events");
+import FeatureBasicGUI from "../gui";
 const uuid = require("uuid/v4");
 /* @internal */
 export type guiControlOptions = {
-    type: 'button'|'text'
-    id?: string
-    text?: string
-    fontSizePx?: string
-    height?: string | number
-    positionInGrid?: [number, number]
-  }
+  type: "button" | "text";
+  id?: string;
+  text?: string;
+  fontSizePx?: string;
+  height?: string | number;
+  positionInGrid?: [number, number];
+};
 /* @internal */
 export class guiControl extends EventEmitter {
-    id?:string
-    private _uuid:string
-    gui:FeatureBasicGUI
-    type:'button'|'text'
-    positionInGrid: [number, number]
-    text?:string
-  constructor(gui:FeatureBasicGUI, options:guiControlOptions) {
+  id?: string;
+  private _uuid: string;
+  gui: FeatureBasicGUI;
+  type: "button" | "text";
+  positionInGrid: [number, number];
+  text?: string;
+  constructor(gui: FeatureBasicGUI, options: guiControlOptions) {
     super();
     if (!options) {
       options = {
@@ -52,10 +52,7 @@ export class guiControl extends EventEmitter {
 
   remove() {
     if (this.gui && this.gui.listOfControls.length > 0) {
-      this.gui.listOfControls.splice(
-        this.gui.listOfControls.indexOf(this),
-        1
-      );
+      this.gui.listOfControls.splice(this.gui.listOfControls.indexOf(this), 1);
     }
     this.gui.show();
   }
@@ -70,4 +67,3 @@ export class guiControl extends EventEmitter {
     }
   }
 }
-

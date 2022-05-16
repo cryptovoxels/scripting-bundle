@@ -6,16 +6,16 @@ import { guiControl, guiControlOptions } from "./lib/guiControl";
 const uuid = require("uuid/v4");
 
 /* @internal */
-export type GUIOptions = { billBoardMode: 1|2|0 }
+export type GUIOptions = { billBoardMode: 1 | 2 | 0 };
 /* @internal */
 export default class FeatureBasicGUI {
   billBoardMode = 1;
-  feature:Feature
-  uuid:string
-  id:string=undefined!
-  private _listOfControls:guiControl[]
-  showing:boolean= false;
-  constructor(feature:Feature, options:GUIOptions = { billBoardMode: 2 }) {
+  feature: Feature;
+  uuid: string;
+  id: string = undefined!;
+  private _listOfControls: guiControl[];
+  showing: boolean = false;
+  constructor(feature: Feature, options: GUIOptions = { billBoardMode: 2 }) {
     this.feature = feature;
     this.uuid = uuid();
     this._listOfControls = [];
@@ -33,7 +33,11 @@ export default class FeatureBasicGUI {
     }
   }
 
-  addButton(text:string|null = null, positionInGrid:[number,number] = [0, 0], id:string|null = null) {
+  addButton(
+    text: string | null = null,
+    positionInGrid: [number, number] = [0, 0],
+    id: string | null = null
+  ) {
     if (!id) {
       id = "unknown" + this._listOfControls.length + 1;
     }
@@ -56,7 +60,11 @@ export default class FeatureBasicGUI {
     return control;
   }
 
-  addText(text:string|null = null, positionInGrid:[number,number] = [0, 0], id?:string) {
+  addText(
+    text: string | null = null,
+    positionInGrid: [number, number] = [0, 0],
+    id?: string
+  ) {
     if (!text) {
       text = "Text";
     }
@@ -76,7 +84,7 @@ export default class FeatureBasicGUI {
     return control;
   }
 
-  private _replacesOldControl(control:guiControl) {
+  private _replacesOldControl(control: guiControl) {
     // Replace a control if the position is the same as another.
     let controlToReplace = this.getControlByPosition(control.positionInGrid);
     if (controlToReplace) {
@@ -87,19 +95,24 @@ export default class FeatureBasicGUI {
     return false;
   }
 
-  get defaultControl():guiControlOptions {
-    return { type:'text', text: "Text", id: undefined, positionInGrid: [0, 0] };
+  get defaultControl(): guiControlOptions {
+    return {
+      type: "text",
+      text: "Text",
+      id: undefined,
+      positionInGrid: [0, 0],
+    };
   }
 
-  getControlById(id:string) {
+  getControlById(id: string) {
     return this._listOfControls.find((control) => control.id == id);
   }
 
-  getControlByUuid(uuid:string) {
+  getControlByUuid(uuid: string) {
     return this._listOfControls.find((control) => control.uuid == uuid);
   }
 
-  getControlByPosition(positionInGrid:[number,number]) {
+  getControlByPosition(positionInGrid: [number, number]) {
     return this._listOfControls.find(
       (control) =>
         control.positionInGrid[0] == positionInGrid[0] &&
@@ -107,17 +120,19 @@ export default class FeatureBasicGUI {
     );
   }
 
-  serialize(){
-    const listOfControls = Array.from(this._listOfControls).map((control)=>control.summary)
+  serialize() {
+    const listOfControls = Array.from(this._listOfControls).map(
+      (control) => control.summary
+    );
     return {
       uuid: this.uuid,
       listOfControls: listOfControls,
       billBoardMode: this.billBoardMode,
-    }
+    };
   }
 
-  get listOfControls():guiControl[]{
-    return this._listOfControls
+  get listOfControls(): guiControl[] {
+    return this._listOfControls;
   }
 
   show() {

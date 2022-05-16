@@ -1,1 +1,1 @@
-export type ParcelOrSpaceId = string|number
+export type ParcelOrSpaceId = string | number;
