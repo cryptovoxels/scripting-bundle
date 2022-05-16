@@ -12,3 +12,7 @@ If users want to host their own scripting server, we have https://github.com/cry
 
 ## Documentation
 https://github.com/cryptovoxels/Voxels-Scripting-Server/docs/index.html
+
+## Contributing
+
+1. Clone the repo.
