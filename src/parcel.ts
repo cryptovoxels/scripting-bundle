@@ -576,6 +576,8 @@ export default class Parcel extends AbstractParcel {
 
     this.parse(p);
 
+    //legacy and only useful for scripting atm
+    delete p.contributors;
     this.broadcast({
       type: "snapshot",
       parcel: p,
