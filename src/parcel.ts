@@ -124,7 +124,9 @@ export default class Parcel extends AbstractParcel {
   }
 
   private onMessage(ws: ExtendedWebSocket, msg: Message) {
-    //  if(msg.type=='click'){console.log('onMessage', msg)}
+    if(!msg.event){
+      msg.event = {}
+    }
 
     // ws.player should always be defined
     if (msg.type === "playerenter") {

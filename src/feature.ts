@@ -8,7 +8,7 @@ import { EventEmitter } from "events";
 import { Animation } from "@babylonjs/core/Animations/animation";
 import { Vector3 } from "@babylonjs/core/Maths/math";
 import { _validateObject } from "./lib/validation-helpers";
-import FeatureBasicGUI from "./gui";
+import FeatureBasicGUI, { GUIOptions } from "./gui";
 import Parcel from "./parcel";
 /* @internal */
 export class Feature extends EventEmitter {
@@ -191,7 +191,7 @@ export class Feature extends EventEmitter {
     });
   }
 
-  createBasicGui(id = undefined, options = undefined): FeatureBasicGUI | void {
+  createBasicGui(id:string|undefined = undefined, options:undefined|GUIOptions = undefined): FeatureBasicGUI | void {
     const gui = new FeatureBasicGUI(this, options);
     gui.id = id!;
     this.gui = gui;

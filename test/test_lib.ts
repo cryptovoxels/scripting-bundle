@@ -4,7 +4,7 @@ import Parcel from "../src/parcel";
 import { Player } from "../src/player";
 
 export const overrideParcel = (parcel:any)=>{
-
+    
     parcel.receiveMsg=(obj:Message)=> {
         const ws = {
           readyState: 1,
