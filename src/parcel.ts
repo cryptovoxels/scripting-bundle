@@ -124,8 +124,8 @@ export default class Parcel extends AbstractParcel {
   }
 
   private onMessage(ws: ExtendedWebSocket, msg: Message) {
-    if(!msg.event){
-      msg.event = {}
+    if (!msg.event) {
+      msg.event = {};
     }
 
     // ws.player should always be defined
@@ -601,7 +601,7 @@ export default class Parcel extends AbstractParcel {
           scale: new Vector3(1, 1, 1).asArray(),
           type,
           //@ts-expect-error
-          uuid: uuid.default? uuid.default.v4():uuid.v4(),
+          uuid: uuid.default ? uuid.default.v4() : uuid.v4(),
           createdByScripting: true,
         },
         description || {}

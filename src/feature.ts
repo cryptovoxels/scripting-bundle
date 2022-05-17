@@ -191,7 +191,10 @@ export class Feature extends EventEmitter {
     });
   }
 
-  createBasicGui(id:string|undefined = undefined, options:undefined|GUIOptions = undefined): FeatureBasicGUI | void {
+  createBasicGui(
+    id: string | undefined = undefined,
+    options: undefined | GUIOptions = undefined
+  ): FeatureBasicGUI | void {
     const gui = new FeatureBasicGUI(this, options);
     gui.id = id!;
     this.gui = gui;

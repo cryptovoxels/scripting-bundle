@@ -15,7 +15,7 @@ export default class FeatureBasicGUI {
   constructor(feature: Feature, options: GUIOptions = { billBoardMode: 2 }) {
     this.feature = feature;
     //@ts-expect-error
-    this.uuid = uuid.default? uuid.default.v4():uuid.v4();
+    this.uuid = uuid.default ? uuid.default.v4() : uuid.v4();
     this._listOfControls = [];
 
     if (options) {
