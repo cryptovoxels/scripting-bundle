@@ -4,7 +4,7 @@
     "compilerOptions": {
       "resolveJsonModule":true,
       "esModuleInterop": true,
-      "types": ["@types/jest","node"],
+      "types": ["@types/jest","jest","node"],
       "noEmit": true
     }
   }

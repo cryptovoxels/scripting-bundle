@@ -1,4 +1,5 @@
 {
+  "include": ["src"],
   "compilerOptions": {
     "sourceMap": false,
     "lib": ["es2017", "dom"],

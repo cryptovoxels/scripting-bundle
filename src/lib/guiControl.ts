@@ -1,6 +1,6 @@
-import {EventEmitter}  from "events";
+import { EventEmitter } from "events";
 import FeatureBasicGUI from "../gui";
-import * as uuid from 'uuid'
+import * as uuid from "uuid";
 /* @internal */
 export type guiControlOptions = {
   type: "button" | "text";
@@ -29,6 +29,7 @@ export class guiControl extends EventEmitter {
       };
     }
     this.gui = gui;
+    //@ts-expect-error
     this._uuid = uuid.default.v4();
     this.type = options.type || "text";
     this.id = options.id;

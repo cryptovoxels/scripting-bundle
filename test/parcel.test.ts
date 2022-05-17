@@ -84,7 +84,7 @@ describe('Test Parcel', function() {
     assert.equal(0, parcel.getPlayers().size)
   })
 
-  test('Parcel events', () => {
+  test('Parcel events', (done) => {
     const getplayer = ()=>{
       return parcel.getPlayerByUuid(playerDetails.uuid)
     }
@@ -112,7 +112,7 @@ describe('Test Parcel', function() {
       assert.ok(p)
       expect(p.isWithinParcel).toBeTruthy()
     })
-    parcel.on('playeraway',(done)=>{
+    parcel.on('playeraway',()=>{
       let p =getplayer()
       assert.ok(p)
       expect(p.isWithinParcel).toBeFalsy()

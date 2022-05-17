@@ -2,7 +2,7 @@ import { Vector3 } from "@babylonjs/core";
 import assert from "assert";
 import { Player } from "../src/player";
 import Parcel from "../src/parcel";
-
+import { fail } from "assert";
 import * as p from './parcel.json'
 import { overrideParcel } from "./test_lib";
 import { MoveMessage } from "../src/lib/messages";
@@ -90,4 +90,32 @@ describe('Test Player', function() {
 
     parcel.receiveMsg({type:'move',...moveMsg,uuid:playerDetail.uuid,player:playerDetail})
   }); 
+
+  
+  it('Player hasEthereumNFT', (done)=> {
+    const p = new Player(playerDetail,parcel)
+    const success = (result:boolean)=>{
+      expect(result).toBeTruthy()
+      done()
+    }
+    const shouldFail = (reason:string)=>{
+      fail(reason)
+    }
+    p.wallet='0x0fA074262d6AF761FB57751d610dc92Bac82AEf9'
+    // yup we know it's deprecated
+    p.hasEthereumNFT('0x610e6a9a978fc37642bbf73345dcc5def29ade7a',53,success,shouldFail)
+  },30000); 
+
+  it('Player hasNFT', (done)=> {
+    const p = new Player(playerDetail,parcel)
+    const success = (result:boolean)=>{
+      expect(result).toBeTruthy()
+      done()
+    }
+    const shouldFail = (reason:string)=>{
+      fail(reason)
+    }
+    p.wallet='0x0fA074262d6AF761FB57751d610dc92Bac82AEf9'
+    p.hasNFT('eth','0x610e6a9a978fc37642bbf73345dcc5def29ade7a',53,success,shouldFail)
+  },30000); 
 });

@@ -2,7 +2,7 @@
 
 import { AnimationTarget, FeatureDescription } from "./lib/types";
 //@ts-ignore
-import throttle from 'lodash.throttle'
+import throttle from "lodash.throttle";
 // const throttle = require("lodash.throttle");
 import { EventEmitter } from "events";
 import { Animation } from "@babylonjs/core/Animations/animation";

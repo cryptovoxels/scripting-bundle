@@ -15,7 +15,7 @@ import { Feature } from "./feature";
 import Parcel from "./parcel";
 import { Space } from "./parcel";
 
-function getGlobal():typeof globalThis | (Window & typeof globalThis) | null {
+function getGlobal(): typeof globalThis | (Window & typeof globalThis) | null {
   if (typeof global !== "undefined") {
     return global;
   } else if (typeof self !== "undefined") {
@@ -36,10 +36,9 @@ declare global {
 // the grid is usually `global` and the iframe when the script is not hosted is usually `self`;
 // Even though `window` will always be null, getGlobal() doesn't return it just in case, because we don't want
 // to override the setInterval of the window (could affect render).
-const G:typeof globalThis | (Window & typeof globalThis) | null = getGlobal();
+const G: typeof globalThis | (Window & typeof globalThis) | null = getGlobal();
 if (G) {
-
-  G.setInterval = (function (setInterval:Function) {
+  G.setInterval = (function (setInterval: Function) {
     return function (func: TimerHandler, time: number, ...args: any[]) {
       let t = time;
       if (isNaN(parseInt(time.toString(), 10))) {

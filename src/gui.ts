@@ -1,6 +1,6 @@
 import { Feature } from "./feature";
 import { guiControl, guiControlOptions } from "./lib/guiControl";
-import * as uuid from 'uuid'
+import * as uuid from "uuid";
 
 /* @internal */
 export type GUIOptions = { billBoardMode: 1 | 2 | 0 };
@@ -14,7 +14,8 @@ export default class FeatureBasicGUI {
   showing: boolean = false;
   constructor(feature: Feature, options: GUIOptions = { billBoardMode: 2 }) {
     this.feature = feature;
-    this.uuid = uuid.default.v4();
+    //@ts-expect-error
+    this.uuid = uuid.default? uuid.default.v4():uuid.v4();
     this._listOfControls = [];
 
     if (options) {

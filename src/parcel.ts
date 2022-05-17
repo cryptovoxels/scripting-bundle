@@ -17,8 +17,8 @@ import {
 import { EventEmitter } from "events";
 // const throttle = require("lodash.throttle");
 //@ts-ignore
-import throttle from 'lodash.throttle'
-import * as uuid from 'uuid'
+import throttle from "lodash.throttle";
+import * as uuid from "uuid";
 
 function getGlobal() {
   if (typeof global !== "undefined") {
@@ -590,7 +590,6 @@ export default class Parcel extends AbstractParcel {
     description?: FeatureDescription,
     shouldBroadcast = true
   ) {
-
     const feature = Feature.create(
       this,
       Object.assign(
@@ -600,7 +599,7 @@ export default class Parcel extends AbstractParcel {
           scale: new Vector3(1, 1, 1).asArray(),
           type,
           //@ts-expect-error
-          uuid: uuid.default.v4(),
+          uuid: uuid.default? uuid.default.v4():uuid.v4(),
           createdByScripting: true,
         },
         description || {}
@@ -796,25 +795,25 @@ export default class Parcel extends AbstractParcel {
 
 /* @internal */
 export class Space extends Parcel {
-  constructor(id:ParcelOrSpaceId) {
+  constructor(id: ParcelOrSpaceId) {
     super(id);
   }
-  fetchSnapshots=(callback:Function|null = null)=> {
-    console.log('[Scripting] fetchsnapshot() Not supported in spaces')
+  fetchSnapshots = (callback: Function | null = null) => {
+    console.log("[Scripting] fetchsnapshot() Not supported in spaces");
+  };
+
+  setSnapshot = () => {
+    console.log("[Scripting] setSnapshot() Not supported in spaces");
+  };
+
+  disallow() {
+    console.log("[Scripting] Disallow() Not supported in spaces");
+  }
+  allow() {
+    console.log("[Scripting] Allow() Not supported in spaces");
   }
 
-  setSnapshot=()=> {
-      console.log('[Scripting] setSnapshot() Not supported in spaces')
-  }
-
-  disallow(){
-      console.log('[Scripting] Disallow() Not supported in spaces')
-  }
-  allow(){
-      console.log('[Scripting] Allow() Not supported in spaces')
-  }
-
-  isWalletAllowedIfPrivate(wallet:string){
-      return true
+  isWalletAllowedIfPrivate(wallet: string) {
+    return true;
   }
 }

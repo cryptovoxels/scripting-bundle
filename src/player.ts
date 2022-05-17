@@ -2,11 +2,11 @@ import { Vector3 } from "@babylonjs/core/Maths/math";
 import { MoveMessage } from "./lib/messages";
 
 import { CollectibleType, PlayerDescription } from "./lib/types";
-
+import fetch from "node-fetch";
 import { EventEmitter } from "events";
 import Parcel from "./parcel";
 //@ts-ignore
-import throttle from 'lodash.throttle'
+import throttle from "lodash.throttle";
 // const throttle = require("lodash.throttle");
 
 /* @internal */
@@ -30,7 +30,7 @@ export class Player extends EventEmitter {
     this.name = description && description.name;
     this.wallet = description && description.wallet;
     this._iswithinParcel = false;
-    this.position =Vector3.Zero();
+    this.position = Vector3.Zero();
     this.rotation = Vector3.Zero();
     this.collectibles = (description && description.collectibles) || [];
   }
@@ -123,24 +123,26 @@ export class Player extends EventEmitter {
     });
   }
   /**
-   *
+   * @deprecated Use hasNFT() in the future.
    * @param {string} contract the contract address
    * @param {string|number} tokenId the token id
    * @param {(boolean)=>void} successCallback A callback called on success and has a boolean (whether player has NFT or not) as argument
    * @param {(string)=>void} failCallback Callback called on fail. With a string as arugment (the reason)
    * @returns
    */
-  hasEthereumNFT(
+  hasEthereumNFT = (
     contract: string,
     tokenId: string | number,
-    successCallback: Function | null = null,
-    failCallback: Function | null = null
-  ) {
+    successCallback: ((bool: boolean) => void) | null = null,
+    failCallback: ((reason: string) => void) | null = null
+  ) => {
     if (!this.isLoggedIn()) {
+      failCallback && failCallback("User is not logged in");
       return false;
     }
     if (typeof tokenId !== "number" && typeof tokenId !== "string") {
       console.error("[Scripting] token id is invalid");
+      failCallback && failCallback("Invalid token id");
       return false;
     }
     if (typeof tokenId == "number") {
@@ -154,36 +156,22 @@ export class Player extends EventEmitter {
       console.error("[Scripting] contract address is invalid");
       return false;
     }
-
-    let api_url = `https://api.opensea.io/api/v1/asset/${contract}/${tokenId}?account_address=${this.wallet}`;
+    let url = `https://www.voxels.com/api/avatar/owns/eth/${contract}/${tokenId}?wallet=${this.wallet}`;
     let promise;
     if (typeof global == "undefined" || !global.fetchJson) {
       /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
-      promise = fetch(api_url).then((r) => r.json());
+      promise = fetch(url).then((r) => r.json());
     } else {
-      promise = fetchJson(api_url);
+      promise = fetchJson(url);
     }
 
     promise
-      .then((r) => {
+      .then((r: { success: boolean; ownsToken?: boolean }) => {
         if (!r) {
           failCallback && failCallback("no data by opensea, try again later");
           return false;
         }
-        let ownsAsset = true; // default is true
-        if (!r.ownership) {
-          // Opensea sends empty ownership when not owner
-          ownsAsset = false;
-        }
-        if (ownsAsset && !r.ownership.owner) {
-          ownsAsset = false;
-        }
-
-        if (ownsAsset) {
-          ownsAsset =
-            r.ownership.owner.address.toLowerCase() ==
-            this.wallet?.toLowerCase();
-        }
+        let ownsAsset = !!r.ownsToken;
 
         if (successCallback) {
           successCallback(ownsAsset);
@@ -194,10 +182,81 @@ export class Player extends EventEmitter {
         return ownsAsset;
       })
       .catch((e) => {
-        failCallback && failCallback("error fetching the data");
+        failCallback && failCallback(e.toString() || "error fetching the data");
         console.error("[Scripting]", e);
       });
-  }
+  };
+
+  /**
+   * Will Fetch whether the player has the given NFT and return the value using the callbacks provided
+   * @param {string} chain the chain identifier: 'eth' or 'matic'
+   * @param {string} contract the contract address
+   * @param {string|number} tokenId the token id
+   * @param {(boolean)=>void} successCallback A callback called on success and has a boolean (whether player has NFT or not) as argument
+   * @param {(string)=>void} failCallback Callback called on fail. With a string as arugment (the reason)
+   * @returns
+   */
+  hasNFT = (
+    chain: string,
+    contract: string,
+    tokenId: string | number,
+    successCallback: ((bool: boolean) => void) | null = null,
+    failCallback: ((reason: string) => void) | null = null
+  ) => {
+    if (!this.isLoggedIn()) {
+      failCallback && failCallback("User is not logged in");
+      return false;
+    }
+    if (typeof tokenId !== "number" && typeof tokenId !== "string") {
+      console.error("[Scripting] token id is invalid");
+      failCallback && failCallback("Invalid token id");
+      return false;
+    }
+    if (typeof tokenId == "number") {
+      tokenId = tokenId.toString();
+    }
+    if (chain !== "eth" && chain !== "matic") {
+      console.error("[Scripting] chain unsupported");
+      failCallback && failCallback("Invalid chain");
+    }
+
+    if (
+      typeof contract !== "string" ||
+      (typeof contract == "string" && contract.substring(0, 2) !== "0x")
+    ) {
+      console.error("[Scripting] contract address is invalid");
+      return false;
+    }
+    let url = `https://www.voxels.com/api/avatar/owns/${chain}/${contract}/${tokenId}?wallet=${this.wallet}`;
+    let promise;
+    if (typeof global == "undefined" || !global.fetchJson) {
+      /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
+      promise = fetch(url).then((r) => r.json());
+    } else {
+      promise = fetchJson(url);
+    }
+
+    promise
+      .then((r: { success: boolean; ownsToken?: boolean }) => {
+        if (!r) {
+          failCallback && failCallback("Could not reach API, try again later");
+          return false;
+        }
+        let ownsAsset = !!r.ownsToken;
+
+        if (successCallback) {
+          successCallback(ownsAsset);
+        } else {
+          console.error('[Scripting] No callback given to "hasNFT"');
+          console.log(`[Scripting] hasNFT = ${ownsAsset}`);
+        }
+        return ownsAsset;
+      })
+      .catch((e) => {
+        failCallback && failCallback(e.toString() || "error fetching the data");
+        console.error("[Scripting]", e);
+      });
+  };
 
   get isAnonymous() {
     return !!this.isLoggedIn();
