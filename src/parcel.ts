@@ -463,7 +463,7 @@ export default class Parcel extends AbstractParcel {
     let p: Player[] = [];
     // Don't want to lose the reference to the object
     for (let [k, v] of this.players.entries()) {
-      p.push(v)
+      p.push(v);
     }
     return p;
   }
