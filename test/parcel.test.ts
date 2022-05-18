@@ -74,14 +74,14 @@ describe('Test Parcel', function() {
   })
 
   test('Player joins and leave', () => {
-    assert.equal(0, parcel.getPlayers().size)
+    assert.equal(0, parcel.getPlayers().length)
 
     parcel.receiveMsg({type:'join',player:playerDetails})
-    assert.equal(1, parcel.getPlayers().size)
+    assert.equal(1, parcel.getPlayers().length)
 
     parcel.receiveMsg({type:'playeraway',player:playerDetails})
 
-    assert.equal(0, parcel.getPlayers().size)
+    assert.equal(0, parcel.getPlayers().length)
   })
 
   test('Parcel events', (done) => {
@@ -89,7 +89,7 @@ describe('Test Parcel', function() {
       return parcel.getPlayerByUuid(playerDetails.uuid)
     }
     parcel.on('join',()=>{
-      assert.equal(1, parcel.getPlayers().size)
+      assert.equal(1, parcel.getPlayers().length)
     })
     parcel.on('playernearby',()=>{
       let p =getplayer()

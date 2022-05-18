@@ -36,7 +36,7 @@ describe('Test Player', function() {
   it('Player Object has joined', function() {
     parcel.receiveMsg({type:'join',player:playerDetail})
 
-    assert.equal(1, parcel.getPlayers().size)
+    assert.equal(1, parcel.getPlayers().length)
     const p = parcel.getPlayerByUuid(playerDetail.uuid)
     assert.ok(p)
     expect(p.uuid).toEqual('wdwdwd')
@@ -49,7 +49,7 @@ describe('Test Player', function() {
 
   it('Player Object has playerentered', function() {
     parcel.receiveMsg({type:'playerenter',player:playerDetail})
-    assert.equal(1, parcel.getPlayers().size)
+    assert.equal(1, parcel.getPlayers().length)
     const p = parcel.getPlayerByUuid(playerDetail.uuid)
     assert.ok(p)
     expect(p.isWithinParcel).toEqual(true)
@@ -57,7 +57,7 @@ describe('Test Player', function() {
 
   it('Player Object has left', function() {
     parcel.receiveMsg({type:'playerleave',player:playerDetail})
-    assert.equal(1, parcel.getPlayers().size)
+    assert.equal(1, parcel.getPlayers().length)
     const p = parcel.getPlayerByUuid(playerDetail.uuid)
     assert.ok(p)
     expect(p.isWithinParcel).toEqual(false)
