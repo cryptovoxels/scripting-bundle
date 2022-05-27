@@ -39,6 +39,7 @@ export class Player extends EventEmitter {
     (emoji: string) => {
       if (!this.isWithinParcel) {
         // don't allow this if user is outside parcel
+        console.error("[Scripting] User outside parcel, can't emote!");
         return;
       }
 
@@ -81,8 +82,8 @@ export class Player extends EventEmitter {
     if (playerInfo.wallet) {
       this.wallet = playerInfo.wallet;
     }
-    if (typeof playerInfo._iswithinParcel !== undefined) {
-      this._iswithinParcel = !!playerInfo._iswithinParcel;
+    if (typeof playerInfo._iswithinParcel !== 'undefined') {
+      this.isWithinParcel = !!playerInfo._iswithinParcel;
     }
     if (playerInfo.collectibles) {
       this.collectibles = playerInfo.collectibles;
