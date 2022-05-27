@@ -82,7 +82,7 @@ export class Player extends EventEmitter {
     if (playerInfo.wallet) {
       this.wallet = playerInfo.wallet;
     }
-    if (typeof playerInfo._iswithinParcel !== 'undefined') {
+    if (typeof playerInfo._iswithinParcel !== "undefined") {
       this.isWithinParcel = !!playerInfo._iswithinParcel;
     }
     if (playerInfo.collectibles) {
