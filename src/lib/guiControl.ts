@@ -30,7 +30,7 @@ export class guiControl extends EventEmitter {
     }
     this.gui = gui;
     //@ts-expect-error
-    this._uuid = uuid.default.v4();
+    this._uuid = uuid.default ? uuid.default.v4() : uuid.v4();
     this.type = options.type || "text";
     this.id = options.id;
     this.text = options.text || "Text";
