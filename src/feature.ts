@@ -196,7 +196,7 @@ export class Feature extends EventEmitter {
     options: undefined | GUIOptions = undefined
   ): FeatureBasicGUI | void {
     const gui = new FeatureBasicGUI(this, options);
-    gui.id = id!;
+    gui.id = id || "myGui" + Math.floor(Math.random() * 100);
     this.gui = gui;
     return gui;
   }
