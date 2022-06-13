@@ -460,7 +460,12 @@ export default class Parcel extends AbstractParcel {
    * @returns {@link Player}[]
    */
   getPlayers() {
-    return this.players;
+    let playerList: Player[] = [];
+    // Don't want to lose the reference to the object
+    for (let [k, v] of this.players.entries()) {
+      playerList.push(v);
+    }
+    return playerList;
   }
   /**
    * Get a list of all players that are within the parcel
