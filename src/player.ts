@@ -7,8 +7,6 @@ import { EventEmitter } from "events";
 import Parcel from "./parcel";
 //@ts-ignore
 import throttle from "lodash.throttle";
-// const throttle = require("lodash.throttle");
-
 /* @internal */
 export class Player extends EventEmitter {
   collectibles: CollectibleType[];
@@ -20,7 +18,6 @@ export class Player extends EventEmitter {
   wallet: string | undefined;
   position: Vector3;
   rotation: Vector3;
-  private _numTeleport: number = 0;
   constructor(description: PlayerDescription, parcel: Parcel) {
     super();
     Object.assign(this, description);
@@ -55,7 +52,10 @@ export class Player extends EventEmitter {
     500,
     { leading: true, trailing: false }
   );
-
+  /**
+   * Animate the avatar
+   * @deprecated
+   */
   animate = throttle((animation: string) => {}, 10000, {
     leading: true,
     trailing: false,
@@ -93,29 +93,28 @@ export class Player extends EventEmitter {
   isLoggedIn() {
     return !!this.wallet && !!this.wallet.match(/^(0x)?[0-9a-f]{40}$/i);
   }
-
-  teleportTo(coords: string) {
-    if (!this.isWithinParcel) {
-      // don't allow this if user is outside parcel
-      return;
-    }
-    if (!coords || coords == "") {
-      return;
-    }
-    // Avoid spamming of teleport
-    if (this._numTeleport++ > 5) {
-      setTimeout(() => {
-        this._numTeleport = 0;
-      }, 4000);
-      return;
-    }
-    this._numTeleport++;
-    this.parcel.broadcast({
-      type: "player-teleport",
-      uuid: this.uuid,
-      coordinates: coords,
-    });
-  }
+  /**
+   * Teleports the avatar to a coordinate
+   * @param coords string of coordinates, eg: NE@47W,250N
+   */
+  teleportTo = throttle(
+    (coords: string) => {
+      if (!this.isWithinParcel) {
+        // don't allow this if user is outside parcel
+        return;
+      }
+      if (!coords || coords == "") {
+        return;
+      }
+      this.parcel.broadcast({
+        type: "player-teleport",
+        uuid: this.uuid,
+        coordinates: coords,
+      });
+    },
+    1000,
+    { trailing: true, leading: false }
+  ) as (coords: string) => void;
 
   hasWearable(tokenId: number, collectionId: number = 1) {
     return !!this.collectibles.find((c) => {
