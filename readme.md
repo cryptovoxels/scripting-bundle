@@ -24,3 +24,7 @@ https://github.com/cryptovoxels/Voxels-Scripting-Server/docs/index.html
 4. Make a pull request on github.
 
 If you've changed code inside `src/` please run `npm run docs` and commit the changes.
+
+Note:
+If you have access to the cryptovoxels repo; you can test the build, by then running "npm run copy:voxels" after build ;
+This will copy the scripting bundle to the cryptovoxels repo, and you can test it on local
