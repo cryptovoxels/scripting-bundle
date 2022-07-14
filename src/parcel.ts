@@ -524,7 +524,7 @@ export default class Parcel extends AbstractParcel {
   ) as (snapshot_id: number) => void;
 
   private _fetchSnapshots(callback?: (snapshots: Snapshot[]) => void): void {
-    const api_url = `https://www.cryptovoxels.com/api/parcels/${this.id}/snapshots.json`;
+    const api_url = `https://www.voxels.com/api/parcels/${this.id}/snapshots.json`;
     let promise;
     if (typeof global == "undefined" || !global.fetchJson) {
       /* fetch doesn't work nicely on the grid. So we use 'fetchJson' when on scripthost, and fetch() when local */
