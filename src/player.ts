@@ -259,7 +259,7 @@ export class Player extends EventEmitter {
   };
 
   get isAnonymous() {
-    return !!this.isLoggedIn();
+    return !this.isLoggedIn();
   }
 
   onMove = (msg: MoveMessage) => {
