@@ -36,6 +36,7 @@ export type ParcelBroadcastMessage = {
   reason?: string;
   control?: guiControlType;
   gui?: guiBatchInfo;
+  cryptoData?: Record<string, any>;
 };
 
 export type guiBatchInfo = {
