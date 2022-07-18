@@ -113,7 +113,7 @@ export class Player extends EventEmitter {
       });
     },
     1000,
-    { trailing: true, leading: false }
+    { trailing: false, leading: true }
   ) as (coords: string) => void;
 
   hasWearable(tokenId: number, collectionId: number = 1) {
@@ -288,4 +288,32 @@ export class Player extends EventEmitter {
       });
     }
   }
+
+  ///@private
+  private _askForCrypto(quantity:string='0.01',to?:string,erc20Address?:string,chain_id:number=1){
+    if(!this.isWithinParcel){
+      console.error('[Scripting] User is outside the parcel')
+      return
+    }
+    if(!to){
+      to = this.parcel.owner
+    }
+
+    this.emit("player-askcrypto",{uuid:this.uuid,to,quantity,erc20Address,chain_id})
+  }
+
+  /**
+   * Asks the given player for crypto. Throttled to 1.5s
+   * @param {string} quantity the quantity to send, default 0.01
+   * @param {string} to The receiver of the crypto; leave empty for parcel owner
+   * @param {string} erc20Address Optional, Address of erc20 to send.
+   * @param {number} chain_id Optional,The network id if any erc20 address is given. (1=mainnet,137= polygon)
+   */
+   askForCrypto= throttle(
+    (quantity:string='0.01',to?:string,erc20Address?:string,chain_id:number=1) => {
+      this._askForCrypto(quantity,to,erc20Address,chain_id);
+    },
+    1500,
+    { trailing: false, leading: true }
+    ) as (quantity:string,erc20Address?:string,chain_id?:number) => void;
 }
