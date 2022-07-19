@@ -732,6 +732,17 @@ export default class Parcel extends AbstractParcel {
   set allowLoggedInOnly(state: boolean) {
     if (typeof state == "boolean") {
       this._allowLoggedInOnly = state;
+      if (state) {
+        // if we switched it to true, then kick out all the players not allowed.
+        this.players.forEach((player) => {
+          if (!player.isLoggedIn()) {
+            // Player not allowed
+            player.kick(
+              `Parcel ${this.id} switched to logged in only mode and you're not logged in.`
+            );
+          }
+        });
+      }
     } else {
       console.error(["[Scripting] allowLoggedInOnly is a boolean"]);
     }
