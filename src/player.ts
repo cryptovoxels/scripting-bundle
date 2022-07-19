@@ -12,7 +12,7 @@ export class Player extends EventEmitter {
   collectibles: CollectibleType[];
   private _token: string;
   private _iswithinParcel: boolean;
-  uuid: string;
+  readonly uuid: string;
   parcel: Parcel;
   name: string | undefined;
   wallet: string | undefined;

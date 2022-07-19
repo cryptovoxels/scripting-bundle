@@ -287,7 +287,7 @@ export default class Parcel extends AbstractParcel {
       return;
     }
 
-    if (this.players.has(player.token)) {
+    if (this.players.has(player.token.toLowerCase())) {
       console.log("[Scripting] Player already joined");
       return;
     }
@@ -296,7 +296,7 @@ export default class Parcel extends AbstractParcel {
     player.isWithinParcel = false;
 
     // Add player to list of players
-    this.players.set(player.token, player);
+    this.players.set(player.token.toLowerCase(), player);
 
     this.emit(SupportedMessageTypes.Join, {
       player,
