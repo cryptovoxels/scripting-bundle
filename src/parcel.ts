@@ -253,6 +253,9 @@ export default class Parcel extends AbstractParcel {
       // if user is not allowed in parcel kick him.
       let tmpPlayer =
         player instanceof Player ? player : new Player(player, this);
+
+      tmpPlayer.isWithinParcel = true;
+
       tmpPlayer.kick(
         `Parcel ${this.id} is private and you're not allowed by the owner.`
       );
@@ -262,6 +265,8 @@ export default class Parcel extends AbstractParcel {
     if (this.allowLoggedInOnly) {
       let tmpPlayer =
         player instanceof Player ? player : new Player(player, this);
+        
+      tmpPlayer.isWithinParcel = true;
 
       if (!tmpPlayer.isLoggedIn()) {
         console.log("[Scripting] non-logged in users not allowed in parcel");
