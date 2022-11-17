@@ -265,7 +265,7 @@ export default class Parcel extends AbstractParcel {
     if (this.allowLoggedInOnly) {
       let tmpPlayer =
         player instanceof Player ? player : new Player(player, this);
-        
+
       tmpPlayer.isWithinParcel = true;
 
       if (!tmpPlayer.isLoggedIn()) {
