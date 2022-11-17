@@ -292,7 +292,7 @@ export class Player extends EventEmitter {
   ///@private
   private _askForCrypto(
     quantity: string = "0.01",
-    to?: string,
+    to?: string | undefined,
     erc20Address?: string,
     chain_id: number = 1
   ) {
@@ -331,5 +331,10 @@ export class Player extends EventEmitter {
     },
     1500,
     { trailing: false, leading: true }
-  ) as (quantity: string, erc20Address?: string, chain_id?: number) => void;
+  ) as (
+    quantity: string,
+    to?: string,
+    erc20Address?: string,
+    chain_id?: number
+  ) => void;
 }
