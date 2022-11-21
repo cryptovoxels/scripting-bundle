@@ -291,50 +291,47 @@ export class Player extends EventEmitter {
 
   ///@private
   private _askForCrypto(
-    quantity: string = "0.01",
-    to?: string | undefined,
-    erc20Address?: string,
-    chain_id: number = 1
+    quantity: number = 0.01,
+    to: string = this.parcel.owner,
+    chain_id: number = 1,
+    erc20Address?: string
   ) {
-    if (!to) {
-      to = this.parcel.owner;
-    }
     this.parcel.broadcast({
       type: "player-askcrypto",
       uuid: this.uuid,
-      cryptoData: { to, quantity, erc20Address, chain_id },
+      cryptoData: { quantity, to, chain_id, erc20Address },
     });
   }
 
   /**
    * Asks the given player for crypto. Throttled to 1.5s
    * This function is also ONLY available when the player has recently clicked.
-   * @param {string} quantity the quantity to send, default 0.01
+   * @param {number} quantity the quantity to send, default 0.01
    * @param {string} to The receiver of the crypto; leave empty for parcel owner
    * @param {string} erc20Address Optional, Address of erc20 to send.
    * @param {number} chain_id Optional,The network id if any erc20 address is given. (1=mainnet,137= polygon)
    *
    * ```ts
    * feature.on('click',e=>{
-   *   e.player.askForCrypto("0.05")
+   *   e.player.askForCrypto(1,137)
    * })
    * ```
    */
   askForCrypto = throttle(
     (
-      quantity: string = "0.01",
-      to?: string,
-      erc20Address?: string,
-      chain_id: number = 1
+      quantity: number = 0.01,
+      chain_id: number = 1,
+      to: string = this.parcel.owner,
+      erc20Address?: string
     ) => {
-      this._askForCrypto(quantity, to, erc20Address, chain_id);
+      this._askForCrypto(quantity, to, chain_id, erc20Address);
     },
     1500,
     { trailing: false, leading: true }
   ) as (
-    quantity: string,
+    quantity: number,
+    chain_id?: number,
     to?: string,
-    erc20Address?: string,
-    chain_id?: number
+    erc20Address?: string
   ) => void;
 }

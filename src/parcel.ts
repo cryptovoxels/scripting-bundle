@@ -147,6 +147,9 @@ export default class Parcel extends AbstractParcel {
         return;
       }
       ws.player.onMove(msg);
+    } else if (msg.type === "cryptosent") {
+      this.onCryptoSent(msg.event);
+      return;
     } else if (msg.type === "click") {
       const f = this.getFeatureByUuid(msg.uuid);
       let player;
@@ -243,6 +246,16 @@ export default class Parcel extends AbstractParcel {
       this.createFeature(description.type, description, false);
     }
   }
+
+  private onCryptoSent = (msg: {
+    hash: string;
+    quantity: number;
+    to: string;
+    chain_id: number;
+    erc20Address: string | undefined;
+  }) => {
+    this.emit(SupportedMessageTypes.CryptoSent, { msg });
+  };
 
   private onPlayerEnter = (player: Player) => {
     // Check if player is allowed in parcel only for the `playerenter` event
