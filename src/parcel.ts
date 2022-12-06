@@ -147,8 +147,8 @@ export default class Parcel extends AbstractParcel {
         return;
       }
       ws.player.onMove(msg);
-    } else if (msg.type === "cryptosent") {
-      this.onCryptoSent(msg.event);
+    } else if (msg.type === "cryptohash") {
+      this.onCryptoHash(msg.event);
       return;
     } else if (msg.type === "click") {
       const f = this.getFeatureByUuid(msg.uuid);
@@ -247,14 +247,14 @@ export default class Parcel extends AbstractParcel {
     }
   }
 
-  private onCryptoSent = (msg: {
+  private onCryptoHash = (msg: {
     hash: string;
     quantity: number;
     to: string;
     chain_id: number;
     erc20Address: string | undefined;
   }) => {
-    this.emit(SupportedMessageTypes.CryptoSent, { msg });
+    this.emit(SupportedMessageTypes.CryptoHash, { msg });
   };
 
   private onPlayerEnter = (player: Player) => {
