@@ -6,6 +6,7 @@ export enum SupportedMessageTypes {
   PlayerLeave = "playerleave",
   PlayerNearby = "playernearby",
   PlayerAway = "playeraway",
+  CryptoHash = "cryptohash",
   Move = "move",
   Click = "click",
   Keys = "keys",
@@ -39,6 +40,16 @@ export interface PlayerNearbyMessage extends BasicMessage {
 }
 export interface PlayerAwayMessage extends BasicMessage {
   type: SupportedMessageTypes.PlayerAway;
+}
+export interface CryptoHashMessage extends BasicMessage {
+  type: SupportedMessageTypes.CryptoHash;
+  event: {
+    hash: string;
+    quantity: number;
+    to: string;
+    chain_id: number;
+    erc20Address: string;
+  };
 }
 
 export interface MoveMessage extends BasicMessage {
@@ -91,6 +102,7 @@ export type Message =
   | PlayerLeaveMessage
   | PlayerNearbyMessage
   | PlayerAwayMessage
+  | CryptoHashMessage
   | MoveMessage
   | ClickMessage
   | KeysMessage
